@@ -5,15 +5,15 @@
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>BingusBank | Твой надежный кот-банкир</title>
  <script src="https://cdn.tailwindcss.com"></script>
- <script src="https://cdnjs.cloudflare.com"></script>
+ <!-- Надежная ссылка для qrcode.min.js -->
+ <script src="https://cdn.jsdelivr.net"></script>
 
- <!-- Firebase SDK: Использование глобальных скриптов (НЕ "type="module") для совместимости -->
- <!-- Эти ссылки на gstatic должны работать корректно как глобальные скрипты -->
+ <!-- Firebase SDK: Загружаются глобальные скрипты (v8.10.1) -->
  <script src="https://www.gstatic.com"></script>
  <script src="https://www.gstatic.com"></script>
  <script src="https://www.gstatic.com"></script>
  
- <!-- Скрипт с вашей логикой (также без "type="module") -->
+ <!-- Скрипт с вашей логикой -->
  <script>
  // КОНФИГ FIREBASE (ВАШИ КЛЮЧИ)
  const firebaseConfig = {
@@ -27,26 +27,26 @@
  measurementId: "G-QZQTJN2VBZ"
  };
 
- // Инициализация Firebase (глобальные объекты firebase.auth, firebase.firestore и т.д. будут доступны)
+ // Инициализация Firebase
  firebase.initializeApp(firebaseConfig);
  const auth = firebase.auth();
  const db = firebase.firestore();
  const FieldValue = firebase.firestore.FieldValue;
 
 
- // --- ЛОГИКА ИНТЕРФЕЙСА (все функции теперь доступны глобально) ---
+ // --- ЛОГИКА ИНТЕРФЕЙСА ---
+ // Явно привязываем функции к объекту window для доступа из атрибутов onclick
  window.showScreen = (screenId) => {
  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
  document.getElementById(screenId).classList.remove('hidden');
  };
- // Регистрация
+ 
  window.handleSignUp = async () => {
  const email = document.getElementById('reg-email').value;
  const pass = document.getElementById('reg-pass').value;
  const name = document.getElementById('reg-name').value;
  
  try {
- // Используем глобальные методы Firebase
  const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
  const user = userCredential.user;
  const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
@@ -62,14 +62,14 @@
  alert("Успешная регистрация!");
  } catch (e) { alert(e.message); }
  };
- // Вход
+ 
  window.handleLogin = async () => {
  const email = document.getElementById('login-email').value;
  const pass = document.getElementById('login-pass').value;
  try { await auth.signInWithEmailAndPassword(email, pass); } 
  catch (e) { alert("Ошибка входа"); }
  };
- // Перевод
+ 
  window.handleTransfer = async () => {
  const targetCard = document.getElementById('target-card').value;
  const amount = parseFloat(document.getElementById('transfer-amount').value);
@@ -101,6 +101,7 @@
  alert("Перевод выполнен!");
  } catch (e) { alert(e); }
  };
+ 
  // Мониторинг состояния
  auth.onAuthStateChanged(async (user) => {
  if (user) {
@@ -124,8 +125,9 @@
  window.showScreen('login-screen');
  }
  });
+ 
  window.logout = () => auth.signOut();
- // QR Генерация
+
  window.generateQR = () => {
  const amt = document.getElementById('req-amount').value;
  const qrData = JSON.stringify({ card: document.getElementById('card-display-num').innerText.replace(/\s/g, ''), amount: amt });
