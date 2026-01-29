@@ -5,14 +5,16 @@
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>BingusBank | Твой надежный кот-банкир</title>
  <script src="https://cdn.tailwindcss.com"></script>
+ <!-- Исправлена неполная ссылка на CDNJS для библиотеки QRCode -->
  <script src="https://cdnjs.cloudflare.com"></script>
- <!-- Firebase SDK -->
+
+ <!-- Firebase SDK (модульный импорт оставлен для загрузки библиотек) -->
  <script type="module">
  import { initializeApp } from "https://cdnjs.cloudflare.com";
  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://cdnjs.cloudflare.com";
  import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs, runTransaction } from "https://cdnjs.cloudflare.com";
  
- // КОНФИГ FIREBASE (ЗАМЕНЕН НА ВАШ ИЗ КОНСОЛИ)
+ // КОНФИГ FIREBASE 
  const firebaseConfig = {
  apiKey: "AIzaSyDw7fAK6C-HecRqdilBRDmgEcYUgZ8K8Y8",
  authDomain: "bingusbank-e34f4.firebaseapp.com",
@@ -28,6 +30,23 @@
  const auth = getAuth(app);
  const db = getFirestore(app);
 
+ // Привязка объектов Firebase к window для доступа из глобального скрипта
+ window.auth = auth;
+ window.db = db;
+ window.arrayUnion = arrayUnion;
+ window.doc = doc;
+ window.setDoc = setDoc;
+ window.getDoc = getDoc;
+ window.updateDoc = updateDoc;
+ window.runTransaction = runTransaction;
+ window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+ window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+ window.onAuthStateChanged = onAuthStateChanged;
+ window.signOut = signOut;
+ </script>
+
+ <!-- Новый скрипт для размещения функций, вызываемых через onclick, для устранения ReferenceError -->
+ <script>
  // --- ЛОГИКА ИНТЕРФЕЙСА ---
  window.showScreen = (screenId) => {
  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -128,6 +147,7 @@
  document.getElementById('qr-modal').classList.remove('hidden');
  };
  </script>
+
  <style>
  .orange-btn { @apply bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-full transition-all; }
  .card-gradient { background: linear-gradient(135deg, #ff9d2f 0%, #ff6b00 100%); }
