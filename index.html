@@ -3,244 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BingusBank | Твой надежный кот-банкир</title>
-    
-    <!-- Библиотеки -->
+    <title>BingusBank | Модульный Банкинг</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com"></script>
 
-    <!-- Подключение Firebase через обычные скрипты (совместимость 100%) -->
-    <script src="https://www.gstatic.com"></script>
-    <script src="https://www.gstatic.com"></script>
-    <script src="https://www.gstatic.com"></script>
-
     <style>
-        .orange-btn { background-color: #f97316; color: white; font-weight: bold; padding: 1rem 1.5rem; border-radius: 1.25rem; transition: all 0.2s; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 14px 0 rgba(249, 115, 22, 0.3); }
-        .orange-btn:hover { background-color: #ea580c; transform: translateY(-1px); }
-        .orange-btn:active { transform: scale(0.98); }
+        .orange-btn { @apply bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-2xl transition-all active:scale-95 shadow-lg shadow-orange-200 w-full; }
         .card-bg { background: linear-gradient(135deg, #FF8C00 0%, #FF4500 100%); position: relative; overflow: hidden; }
-        .blur-val { filter: blur(6px); transition: 0.3s; cursor: pointer; }
-        .screen { min-height: 100vh; }
-        .hidden { display: none !important; }
-        input { border: 1px solid #e2e8f0; }
+        .blur-val { filter: blur(8px); transition: 0.3s; cursor: pointer; }
+        .blur-val:hover { filter: blur(0); }
+        .screen { min-height: 100vh; display: none; }
+        .active-screen { display: flex; }
+        input { @apply w-full p-4 bg-slate-50 rounded-2xl border-none outline-none ring-2 ring-transparent focus:ring-orange-500 transition-all mb-4; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-    <!-- ЛОГИКА -->
-    <script>
-        // Твои ключи
+    <!-- LOGIN -->
+    <div id="login-screen" class="screen active-screen flex-col items-center justify-center p-6">
+        <h1 class="text-4xl font-black text-orange-500 italic mb-8 tracking-tighter text-center">BINGUS<span class="text-slate-800 font-light">BANK</span></h1>
+        <div class="bg-white p-8 rounded-[40px] shadow-2xl w-full max-w-md border border-slate-100">
+            <input id="login-email" type="email" placeholder="Email">
+            <input id="login-pass" type="password" placeholder="Пароль">
+            <button id="login-btn" class="orange-btn">Войти в банк</button>
+            <button onclick="window.showScreen('reg-screen')" class="mt-6 text-orange-500 font-bold block mx-auto bg-transparent border-none cursor-pointer">Создать счет</button>
+        </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="reg-screen" class="screen flex-col items-center justify-center p-6">
+        <div class="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-md">
+            <h2 class="text-3xl font-black mb-8 italic text-orange-500">Регистрация</h2>
+            <input id="reg-name" type="text" placeholder="Имя">
+            <input id="reg-email" type="email" placeholder="Email">
+            <input id="reg-pass" type="password" placeholder="Пароль">
+            <button id="reg-btn" class="orange-btn">Открыть счет</button>
+            <button onclick="window.showScreen('login-screen')" class="mt-4 text-slate-400 w-full font-bold bg-transparent border-none cursor-pointer text-center">Вернуться</button>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="main-screen" class="screen flex-col">
+        <nav class="bg-white p-6 flex justify-between items-center shadow-sm sticky top-0 z-50">
+            <span class="font-black text-orange-500 text-2xl italic tracking-tighter">BINGUS</span>
+            <div class="flex items-center gap-4">
+                <span id="user-name" class="font-bold text-slate-700">...</span>
+                <button id="logout-btn" class="bg-slate-100 p-3 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all font-bold text-xs border-none cursor-pointer">ВЫЙТИ</button>
+            </div>
+        </nav>
+
+        <div class="p-6 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 mt-4 w-full">
+            <div class="lg:col-span-2">
+                <div class="card-bg p-8 rounded-[40px] text-white shadow-2xl h-64 flex flex-col justify-between">
+                    <span class="font-black italic tracking-widest text-xs opacity-70 uppercase">Bingus Module 12</span>
+                    <p id="card-full-info" class="text-2xl font-mono tracking-[0.3em] blur-val">•••• •••• •••• ••••</p>
+                </div>
+                <div class="mt-10 flex flex-col md:flex-row justify-between items-end gap-6">
+                    <div>
+                        <p class="text-slate-400 font-black uppercase text-[10px] tracking-widest mb-1">Баланс</p>
+                        <h1 id="balance" class="text-7xl font-black text-slate-900 tracking-tighter">0.00 ₽</h1>
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button onclick="window.showScreen('transfer-screen')" class="orange-btn !w-auto px-10">ПЕРЕВЕСТИ</button>
+                        <button onclick="window.showScreen('request-screen')" class="orange-btn !w-auto px-10 !bg-slate-900">ЗАПРОСИТЬ</button>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-8 rounded-[45px] shadow-sm border border-slate-100 h-[500px] flex flex-col">
+                <h3 class="font-black text-2xl mb-8 italic">История</h3>
+                <div id="history-list" class="overflow-y-auto flex-1 space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRANSFER MODAL -->
+    <div id="transfer-screen" class="screen flex-col items-center justify-center fixed inset-0 bg-white z-50 p-6">
+        <div class="w-full max-w-md">
+            <h2 class="text-4xl font-black mb-10 text-center">Перевод</h2>
+            <input id="target-input" type="text" placeholder="Карта или Email получателя">
+            <input id="transfer-amount" type="number" placeholder="Сумма ₽" class="text-4xl font-black !p-8 bg-slate-100">
+            <button id="do-transfer-btn" class="orange-btn py-6 text-xl">ОТПРАВИТЬ</button>
+            <button onclick="window.showScreen('main-screen')" class="w-full text-slate-300 font-bold mt-6 bg-transparent border-none cursor-pointer">ОТМЕНА</button>
+        </div>
+    </div>
+
+    <!-- REQUEST MODAL -->
+    <div id="request-screen" class="screen flex-col items-center justify-center fixed inset-0 bg-white z-50 p-6">
+        <div class="w-full max-w-md text-center">
+            <h2 class="text-4xl font-black mb-8 italic">Запрос</h2>
+            <input id="req-amount" type="number" placeholder="0.00" class="text-center text-4xl font-black mb-8 !p-8 bg-slate-100">
+            <button id="gen-qr-btn" class="orange-btn">СОЗДАТЬ QR</button>
+            <div id="qr-modal" class="hidden mt-10 p-6 bg-slate-50 rounded-[40px] inline-block border-2 border-dashed border-orange-200">
+                <div id="qrcode"></div>
+            </div>
+            <button onclick="window.showScreen('main-screen')" class="block mx-auto mt-10 text-slate-300 font-bold border-none cursor-pointer">НАЗАД</button>
+        </div>
+    </div>
+
+    <!-- МОДУЛЬНЫЙ СКРИПТ (FIREBASE 12) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, runTransaction, collection, query, where, getDocs, arrayUnion } from "https://www.gstatic.com";
+
         const firebaseConfig = {
-          apiKey: "AIzaSyBHPwgsuDC-UpfsJ5GFSu2jK5DDMokqSHs",
-          authDomain: "bingusbank.firebaseapp.com",
-          databaseURL: "https://bingusbank-default-rtdb.firebaseio.com",
-          projectId: "bingusbank",
-          storageBucket: "bingusbank.firebasestorage.app",
-          messagingSenderId: "208242991541",
-          appId: "1:208242991541:web:ffb52a2c8e785d1ea939fc",
-          measurementId: "G-R0L9G6J6M8"
+            apiKey: "AIzaSyBHPwgsuDC-UpfsJ5GFSu2jK5DDMokqSHs",
+            authDomain: "bingusbank.firebaseapp.com",
+            databaseURL: "https://bingusbank-default-rtdb.firebaseio.com",
+            projectId: "bingusbank",
+            storageBucket: "bingusbank.firebasestorage.app",
+            messagingSenderId: "208242991541",
+            appId: "1:208242991541:web:ffb52a2c8e785d1ea939fc",
+            measurementId: "G-R0L9G6J6M8"
         };
 
-        // Инициализация
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // Глобальные функции
+        // Навигация (глобальная)
         window.showScreen = (id) => {
-            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+            document.getElementById(id).classList.add('active-screen');
         };
 
-        window.handleSignUp = async () => {
+        // Регистрация
+        document.getElementById('reg-btn').onclick = async () => {
             const email = document.getElementById('reg-email').value;
             const pass = document.getElementById('reg-pass').value;
             const name = document.getElementById('reg-name').value;
-            if(!email || !pass || !name) return alert("Заполни все поля!");
-
             try {
-                const res = await auth.createUserWithEmailAndPassword(email, pass);
+                const res = await createUserWithEmailAndPassword(auth, email, pass);
                 const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
-                const userData = {
-                    name, email, cardNum, balance: 10000, cvv: 777, exp: "01/30", history: []
-                };
-                await db.collection("users").doc(res.user.uid).set(userData);
-                await db.collection("cards").doc(cardNum).set({ uid: res.user.uid });
-                alert("Добро пожаловать в BingusBank!");
+                await setDoc(doc(db, "users", res.user.uid), {
+                    name, email, cardNum, balance: 10000, history: []
+                });
+                await setDoc(doc(db, "cards", cardNum), { uid: res.user.uid });
+                alert("BingusBank: Аккаунт готов!");
             } catch (e) { alert(e.message); }
         };
 
-        window.handleLogin = async () => {
+        // Вход
+        document.getElementById('login-btn').onclick = async () => {
             const email = document.getElementById('login-email').value;
             const pass = document.getElementById('login-pass').value;
-            try { await auth.signInWithEmailAndPassword(email, pass); } 
-            catch (e) { alert("Ошибка входа: " + e.message); }
+            try { await signInWithEmailAndPassword(auth, email, pass); } catch (e) { alert("Ошибка!"); }
         };
 
-        window.handleTransfer = async () => {
-            const target = document.getElementById('target-card').value;
+        // Перевод (Логика СБП и Карт)
+        document.getElementById('do-transfer-btn').onclick = async () => {
+            const target = document.getElementById('target-input').value;
             const amount = parseFloat(document.getElementById('transfer-amount').value);
-            if(!amount || amount <= 0) return alert("Введите сумму");
-            
-            const passConfirm = prompt("Введите ваш пароль для подтверждения транзакции:");
-            if(!passConfirm) return;
+            if(!amount || amount <= 0) return alert("Сумма?");
 
             try {
-                const cardSnap = await db.collection("cards").doc(target).get();
                 let targetUid;
-                if(cardSnap.exists) {
+                const cardRef = doc(db, "cards", target);
+                const cardSnap = await getDoc(cardRef);
+                
+                if(cardSnap.exists()) {
                     targetUid = cardSnap.data().uid;
                 } else {
-                    const userQuery = await db.collection("users").where("email", "==", target).get();
-                    if(!userQuery.empty) targetUid = userQuery.docs[0].id;
+                    const q = query(collection(db, "users"), where("email", "==", target));
+                    const qs = await getDocs(q);
+                    if(!qs.empty) targetUid = qs.docs[0].id;
                 }
 
-                if(!targetUid) throw new Error("Получатель не найден");
+                if(!targetUid) throw new Error("Клиент не найден");
 
-                await db.runTransaction(async (t) => {
-                    const sRef = db.collection("users").doc(auth.currentUser.uid);
-                    const rRef = db.collection("users").doc(targetUid);
+                await runTransaction(db, async (t) => {
+                    const sRef = doc(db, "users", auth.currentUser.uid);
+                    const rRef = doc(db, "users", targetUid);
                     const sDoc = await t.get(sRef);
-                    const rDoc = await t.get(rRef);
-
-                    if (sDoc.data().balance < amount) throw "Недостаточно средств!";
+                    if (sDoc.data().balance < amount) throw "Мало средств!";
                     
                     t.update(sRef, { 
                         balance: sDoc.data().balance - amount,
-                        history: firebase.firestore.FieldValue.arrayUnion({type: 'out', amount, to: target, date: new Date().toLocaleString()})
+                        history: arrayUnion({type: 'out', amount, to: target, date: new Date().toLocaleString()})
                     });
                     t.update(rRef, { 
-                        balance: rDoc.data().balance + amount,
-                        history: firebase.firestore.FieldValue.arrayUnion({type: 'in', amount, from: sDoc.data().name, date: new Date().toLocaleString()})
+                        balance: (await t.get(rRef)).data().balance + amount,
+                        history: arrayUnion({type: 'in', amount, from: sDoc.data().name, date: new Date().toLocaleString()})
                     });
                 });
-                alert("Перевод выполнен!");
-                showScreen('main-screen');
+                alert("Мгновенно переведено! ✅");
+                window.showScreen('main-screen');
             } catch (e) { alert(e); }
         };
 
-        window.generateQR = () => {
+        // QR
+        document.getElementById('gen-qr-btn').onclick = async () => {
             const amt = document.getElementById('req-amount').value;
-            db.collection("users").doc(auth.currentUser.uid).get().then(snap => {
-                const qrData = JSON.stringify({ card: snap.data().cardNum, amount: amt });
-                document.getElementById('qrcode').innerHTML = "";
-                new QRCode(document.getElementById("qrcode"), { text: qrData, width: 180, height: 180 });
-                document.getElementById('qr-modal').classList.remove('hidden');
-            });
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            const qrData = JSON.stringify({ card: snap.data().cardNum, amount: amt });
+            document.getElementById('qrcode').innerHTML = "";
+            new QRCode(document.getElementById("qrcode"), { text: qrData, width: 200, height: 200, colorDark: "#f97316" });
+            document.getElementById('qr-modal').classList.remove('hidden');
         };
 
-        window.logout = () => auth.signOut();
+        document.getElementById('logout-btn').onclick = () => signOut(auth);
 
-        auth.onAuthStateChanged(async (user) => {
+        // Realtime мониторинг
+        onAuthStateChanged(auth, (user) => {
             if (user) {
-                db.collection("users").doc(user.uid).onSnapshot(snap => {
+                onSnapshot(doc(db, "users", user.uid), (snap) => {
                     const d = snap.data();
                     if(!d) return;
                     document.getElementById('user-name').innerText = d.name;
                     document.getElementById('balance').innerText = d.balance.toLocaleString() + " ₽";
-                    document.getElementById('card-full-info').innerText = `${d.cardNum.replace(/(.{4})/g, '$1 ')} | ${d.exp} | CVV ${d.cvv}`;
-                    document.getElementById('history-list').innerHTML = [...d.history].reverse().map(h => `
-                        <div class="flex justify-between items-center p-3 bg-slate-100 rounded-xl mb-2">
-                            <div class="text-[10px] text-slate-400">${h.date}</div>
-                            <div class="font-bold ${h.type==='in'?'text-green-500':'text-red-500'}">${h.type==='in'?'+':'-'}${h.amount} ₽</div>
+                    document.getElementById('card-full-info').innerText = d.cardNum.replace(/(.{4})/g, '$1 ');
+                    document.getElementById('history-list').innerHTML = d.history.slice().reverse().map(h => `
+                        <div class="p-4 bg-slate-50 rounded-3xl border border-slate-100 flex justify-between items-center">
+                            <span class="text-[10px] text-slate-400 font-bold">${h.date}</span>
+                            <span class="font-black ${h.type==='in'?'text-green-500':'text-red-500'}">${h.type==='in'?'+':'-'}${h.amount} ₽</span>
                         </div>
                     `).join('');
                 });
-                showScreen('main-screen');
+                window.showScreen('main-screen');
             } else {
-                showScreen('login-screen');
+                window.showScreen('login-screen');
             }
         });
     </script>
-
-    <!-- UI: LOGIN -->
-    <div id="login-screen" class="screen flex flex-col items-center justify-center p-6">
-        <h1 class="text-4xl font-black text-orange-500 italic mb-8">BINGUS BANK</h1>
-        <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
-            <input id="login-email" type="email" placeholder="Email" class="w-full mb-4 p-4 rounded-xl outline-none focus:ring-2 ring-orange-500">
-            <input id="login-pass" type="password" placeholder="Пароль" class="w-full mb-6 p-4 rounded-xl outline-none focus:ring-2 ring-orange-500">
-            <button onclick="handleLogin()" class="orange-btn">Войти</button>
-            <button onclick="showScreen('reg-screen')" class="mt-6 text-orange-500 block mx-auto font-bold bg-transparent border-none cursor-pointer">Создать аккаунт</button>
-        </div>
-    </div>
-
-    <!-- UI: REGISTRATION -->
-    <div id="reg-screen" class="screen hidden flex flex-col items-center justify-center p-6">
-        <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
-            <h2 class="text-2xl font-bold mb-6">Регистрация</h2>
-            <input id="reg-name" type="text" placeholder="Имя" class="w-full mb-4 p-4 rounded-xl outline-none">
-            <input id="reg-email" type="email" placeholder="Email" class="w-full mb-4 p-4 rounded-xl outline-none">
-            <input id="reg-pass" type="password" placeholder="Пароль" class="w-full mb-6 p-4 rounded-xl outline-none">
-            <button onclick="handleSignUp()" class="orange-btn">Зарегистрироваться</button>
-            <button onclick="showScreen('login-screen')" class="mt-4 text-slate-400 w-full bg-transparent border-none cursor-pointer">Назад</button>
-        </div>
-    </div>
-
-    <!-- UI: MAIN -->
-    <div id="main-screen" class="screen hidden">
-        <nav class="bg-white p-6 flex justify-between items-center shadow-sm">
-            <span class="font-black text-orange-500 text-xl italic">BINGUS</span>
-            <div class="flex items-center gap-4">
-                <span id="user-name" class="font-bold">...</span>
-                <button onclick="logout()" class="bg-slate-100 px-4 py-2 rounded-full text-xs font-bold border-none cursor-pointer">ВЫЙТИ</button>
-            </div>
-        </nav>
-
-        <div class="p-6 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="md:col-span-2">
-                <div class="card-bg p-8 rounded-[2.5rem] text-white shadow-2xl h-60 flex flex-col justify-between">
-                    <div class="flex justify-between">
-                        <span class="font-bold tracking-widest italic">PREMIUM</span>
-                        <div class="w-10 h-6 bg-orange-300 rounded opacity-50"></div>
-                    </div>
-                    <p id="card-full-info" class="text-xl font-mono tracking-widest blur-val" onclick="this.classList.toggle('blur-val')">•••• •••• •••• ••••</p>
-                </div>
-
-                <div class="mt-8 flex justify-between items-end">
-                    <div>
-                        <p class="text-slate-400">Баланс</p>
-                        <h1 id="balance" class="text-5xl font-black">0 ₽</h1>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-3 mt-8">
-                    <button onclick="showScreen('transfer-screen')" class="orange-btn text-xs px-2">Перевести</button>
-                    <button onclick="showScreen('request-screen')" class="orange-btn text-xs px-2 bg-slate-800">Запросить</button>
-                    <button onclick="alert('СБП Сканер требует HTTPS и доп. библиотеку')" class="orange-btn text-xs px-2 bg-slate-400">СБП</button>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 h-96 flex flex-col">
-                <h3 class="font-bold mb-4">История</h3>
-                <div id="history-list" class="overflow-y-auto flex-1"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: TRANSFER -->
-    <div id="transfer-screen" class="screen hidden fixed inset-0 bg-white z-50 p-6 flex flex-col items-center justify-center">
-        <div class="w-full max-w-md">
-            <h2 class="text-3xl font-bold mb-6">Перевод</h2>
-            <input id="target-card" type="text" placeholder="Карта или Email" class="w-full p-4 bg-slate-100 rounded-2xl mb-4 border-none outline-none">
-            <input id="transfer-amount" type="number" placeholder="Сумма" class="w-full p-4 bg-slate-100 rounded-2xl mb-6 border-none outline-none text-2xl font-bold">
-            <button onclick="handleTransfer()" class="orange-btn">Отправить</button>
-            <button onclick="showScreen('main-screen')" class="w-full mt-4 text-slate-400 bg-transparent border-none cursor-pointer">Отмена</button>
-        </div>
-    </div>
-
-    <!-- MODAL: REQUEST -->
-    <div id="request-screen" class="screen hidden fixed inset-0 bg-white z-50 p-6 flex flex-col items-center justify-center">
-        <div class="w-full max-w-md text-center">
-            <h2 class="text-2xl font-bold mb-4">Запросить</h2>
-            <input id="req-amount" type="number" placeholder="Сумма" class="w-full p-4 bg-slate-100 rounded-2xl mb-6 border-none outline-none">
-            <button onclick="generateQR()" class="orange-btn">Создать QR</button>
-            <div id="qr-modal" class="hidden mt-6 flex flex-col items-center">
-                <div id="qrcode" class="p-2 bg-white border mb-2"></div>
-                <p class="text-xs text-orange-500">QR-код для перевода</p>
-            </div>
-            <button onclick="showScreen('main-screen')" class="mt-8 text-slate-300 border-none bg-transparent cursor-pointer">Закрыть</button>
-        </div>
-    </div>
-
 </body>
 </html>
