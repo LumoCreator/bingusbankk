@@ -5,7 +5,8 @@
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>BingusBank | Твой надежный кот-банкир</title>
  <script src="https://cdn.tailwindcss.com"></script>
- <script src="https://cdnjs.cloudflare.com"></script>
+ <!-- Надежная ссылка для qrcode.min.js -->
+ <script src="https://cdn.jsdelivr.net"></script>
 
  <!-- Firebase SDK: Загружаются глобальные скрипты (v8.10.1) -->
  <script src="https://www.gstatic.com"></script>
@@ -108,8 +109,9 @@
  </div>
  </div>
 
-<!-- СКРИПТ С ЛОГИКОЙ ПЕРЕНЕСЕН СЮДА -->
+<!-- СКРИПТ С ЛОГИКОЙ ТЕПЕРЬ ОБОРАЧИВАЕТСЯ В window.onload -->
  <script>
+ window.onload = () => {
  // КОНФИГ FIREBASE (ВАШИ КЛЮЧИ)
  const firebaseConfig = {
  apiKey: "AIzaSyDw7fAK6C-HecRqdilBRDmgEcYUgZ8K8Y8",
@@ -128,8 +130,8 @@
  const db = firebase.firestore();
  const FieldValue = firebase.firestore.FieldValue;
 
-
- // --- ЛОГИКА ИНТЕРФЕЙСА (все функции теперь доступны глобально через window) ---
+ // --- ЛОГИКА ИНТЕРФЕЙСА ---
+ // Все функции явно привязаны к window И вызываются после загрузки
  window.showScreen = (screenId) => {
  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
  document.getElementById(screenId).classList.remove('hidden');
@@ -228,6 +230,7 @@
  document.getElementById('qrcode').innerHTML = "";
  new QRCode(document.getElementById("qrcode"), qrData);
  document.getElementById('qr-modal').classList.remove('hidden');
+ };
  };
  </script>
 
