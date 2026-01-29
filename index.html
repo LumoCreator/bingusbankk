@@ -109,9 +109,8 @@
  </div>
  </div>
 
-<!-- СКРИПТ С ЛОГИКОЙ ТЕПЕРЬ ОБОРАЧИВАЕТСЯ В window.onload -->
+<!-- СКРИПТ С ЛОГИКОЙ ПЕРЕНЕСЕН В КОНЕЦ BODY И ЯВНО ПРИВЯЗАН К WINDOW -->
  <script>
- window.onload = () => {
  // КОНФИГ FIREBASE (ВАШИ КЛЮЧИ)
  const firebaseConfig = {
  apiKey: "AIzaSyDw7fAK6C-HecRqdilBRDmgEcYUgZ8K8Y8",
@@ -130,8 +129,8 @@
  const db = firebase.firestore();
  const FieldValue = firebase.firestore.FieldValue;
 
- // --- ЛОГИКА ИНТЕРФЕЙСА ---
- // Все функции явно привязаны к window И вызываются после загрузки
+
+ // --- ЛОГИКА ИНТЕРФЕЙСА (все функции теперь доступны глобально через window) ---
  window.showScreen = (screenId) => {
  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
  document.getElementById(screenId).classList.remove('hidden');
@@ -230,7 +229,6 @@
  document.getElementById('qrcode').innerHTML = "";
  new QRCode(document.getElementById("qrcode"), qrData);
  document.getElementById('qr-modal').classList.remove('hidden');
- };
  };
  </script>
 
