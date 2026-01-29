@@ -4,8 +4,7 @@
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>BingusBank | Твой надежный кот-банкир</title>
- <!-- Улучшил подключение Tailwind для чистоты консоли -->
- <script src="https://cdn.skypack.dev"></script>
+ <script src="https://cdn.tailwindcss.com"></script>
  <script src="https://cdnjs.cloudflare.com"></script>
  <style>
  .orange-btn { @apply bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105 shadow-md; }
@@ -22,12 +21,13 @@
 
  <!-- SCRIPTS -->
  <script type="module">
- // ИСПРАВЛЕННЫЕ, ПОЛНЫЕ ССЫЛКИ НА FIREBASE SDK
+ // ИСПРАВЛЕННЫЕ ССЫЛКИ НА FIREBASE SDK ДЛЯ РАБОТЫ НА GITHUB PAGES
  import { initializeApp } from "https://www.gstatic.com";
  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com";
  import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs, runTransaction } from "https://www.gstatic.com";
+ // NOTE: getAnalytics не использовался в коде из PDF, я его убрал.
  
- // КОНФИГ FIREBASE (ВАШИ КЛЮЧИ)
+ // КОНФИГ FIREBASE С ВАШИМИ КЛЮЧАМИ
  const firebaseConfig = {
     apiKey: "AIzaSyDw7fAK6C-HecRqdilBRDmgEcYUgZ8K8Y8",
     authDomain: "bingusbank-e34f4.firebaseapp.com",
@@ -82,7 +82,7 @@
   try { 
     await signInWithEmailAndPassword(auth, email, pass); 
   } catch (e) { 
-    alert("Ошибка входа: " + e.message); 
+    alert("Ошибка входа"); 
   }
  };
 
@@ -154,7 +154,7 @@
  });
  window.logout = () => signOut(auth);
 
- // QR Генерация (Запрос суммы)
+ // QR Генерация
  window.generateQR = () => {
   const amt = document.getElementById('req-amount').value;
   const card = document.getElementById('card-display-num').innerText.replace(/\s/g, '');
@@ -228,8 +228,8 @@
   </div>
   <div class="flex gap-4">
   <button onclick="showScreen('transfer-screen')" class="orange-btn flex-1 text-sm px-2">Перевести</button>
-  <button onclick="showScreen('request-screen')" class="orange-btn flex-1 text-sm px-2">Запросить QR</button>
-  <button onclick="alert('Для СБП требуется интеграция сканера/API, этот пример использует QR-генерацию.')" class="orange-btn flex-1 text-sm px-2">СБП</button>
+  <button onclick="showScreen('request-screen')" class="orange-btn flex-1 text-sm px-2">Запросить</button>
+  <button onclick="alert('Откройте камеру для СБП')" class="orange-btn flex-1 text-sm px-2">СБП</button>
   </div>
   </div>
   <!-- Right: History -->
@@ -258,7 +258,7 @@
   <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
   <h2 class="text-xl font-bold mb-6">Создать запрос</h2>
   <input id="req-amount" type="number" placeholder="Сумма запроса" class="w-full mb-6 p-4 border rounded-2xl focus:border-orange-500 outline-none text-center">
-  <button onclick="generateQR()" class="orange-btn w-full">Создать QR для оплаты</button>
+  <button onclick="generateQR()" class="orange-btn w-full">Создать QR</button>
   <button onclick="showScreen('main-screen')" class="mt-8 text-orange-500 font-bold hover:underline">Закрыть</button>
   </div>
  </div>
@@ -272,7 +272,5 @@
         <button onclick="closeModal('qr-modal')" class="mt-6 orange-btn w-full">Готово</button>
     </div>
  </div>
-
-
 </body>
 </html>
