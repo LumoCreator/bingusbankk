@@ -5,16 +5,15 @@
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>BingusBank | Твой надежный кот-банкир</title>
  <script src="https://cdn.tailwindcss.com"></script>
- <!-- Исправлена неполная ссылка на CDNJS для библиотеки QRCode -->
  <script src="https://cdnjs.cloudflare.com"></script>
-
- <!-- Firebase SDK (модульный импорт оставлен для загрузки библиотек) -->
+ 
+ <!-- Firebase SDK (Теперь все функции прикреплены к глобальному объекту window) -->
  <script type="module">
  import { initializeApp } from "https://cdnjs.cloudflare.com";
  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://cdnjs.cloudflare.com";
  import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs, runTransaction } from "https://cdnjs.cloudflare.com";
  
- // КОНФИГ FIREBASE 
+ // КОНФИГ FIREBASE
  const firebaseConfig = {
  apiKey: "AIzaSyDw7fAK6C-HecRqdilBRDmgEcYUgZ8K8Y8",
  authDomain: "bingusbank-e34f4.firebaseapp.com",
@@ -27,12 +26,9 @@
  };
 
  const app = initializeApp(firebaseConfig);
- const auth = getAuth(app);
- const db = getFirestore(app);
-
- // Привязка объектов Firebase к window для доступа из глобального скрипта
- window.auth = auth;
- window.db = db;
+ // Привязка Firebase API к глобальному объекту window для доступа из атрибутов onclick
+ window.auth = getAuth(app);
+ window.db = getFirestore(app);
  window.arrayUnion = arrayUnion;
  window.doc = doc;
  window.setDoc = setDoc;
@@ -43,11 +39,8 @@
  window.signInWithEmailAndPassword = signInWithEmailAndPassword;
  window.onAuthStateChanged = onAuthStateChanged;
  window.signOut = signOut;
- </script>
 
- <!-- Новый скрипт для размещения функций, вызываемых через onclick, для устранения ReferenceError -->
- <script>
- // --- ЛОГИКА ИНТЕРФЕЙСА ---
+ // --- ЛОГИКА ИНТЕРФЕЙСА (теперь в глобальной области видимости window) ---
  window.showScreen = (screenId) => {
  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
  document.getElementById(screenId).classList.remove('hidden');
@@ -59,11 +52,11 @@
  const name = document.getElementById('reg-name').value;
  
  try {
- const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+ const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, pass);
  const user = userCredential.user;
  const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
  
- await setDoc(doc(db, "users", user.uid), {
+ await window.setDoc(window.doc(window.db, "users", user.uid), {
  name, email, cardNum,
  balance: 5000, // Подарок при регистрации
  cvv: Math.floor(100 + Math.random() * 900),
@@ -71,7 +64,7 @@
  history: []
  });
  // Индекс для поиска по карте
- await setDoc(doc(db, "cards", cardNum), { uid: user.uid });
+ await window.setDoc(window.doc(window.db, "cards", cardNum), { uid: user.uid });
  alert("Успешная регистрация!");
  } catch (e) { alert(e.message); }
  };
@@ -79,7 +72,7 @@
  window.handleLogin = async () => {
  const email = document.getElementById('login-email').value;
  const pass = document.getElementById('login-pass').value;
- try { await signInWithEmailAndPassword(auth, email, pass); } 
+ try { await window.signInWithEmailAndPassword(window.auth, email, pass); } 
  catch (e) { alert("Ошибка входа"); }
  };
  // Перевод
@@ -90,34 +83,34 @@
  
  if(!pass) return;
  try {
- const cardRef = doc(db, "cards", targetCard);
- const cardSnap = await getDoc(cardRef);
+ const cardRef = window.doc(window.db, "cards", targetCard);
+ const cardSnap = await window.getDoc(cardRef);
  if(!cardSnap.exists()) throw new Error("Карта не найдена");
  
  const recipientUid = cardSnap.data().uid;
- const senderUid = auth.currentUser.uid;
- await runTransaction(db, async (transaction) => {
- const sDoc = await transaction.get(doc(db, "users", senderUid));
- const rDoc = await transaction.get(doc(db, "users", recipientUid));
+ const senderUid = window.auth.currentUser.uid;
+ await window.runTransaction(window.db, async (transaction) => {
+ const sDoc = await transaction.get(window.doc(window.db, "users", senderUid));
+ const rDoc = await transaction.get(window.doc(window.db, "users", recipientUid));
  
  if (sDoc.data().balance < amount) throw "Недостаточно средств";
- transaction.update(doc(db, "users", senderUid), {
+ transaction.update(window.doc(window.db, "users", senderUid), {
  balance: sDoc.data().balance - amount,
- history: arrayUnion({type: 'out', amount, to: targetCard, date: new Date().toLocaleString()})
+ history: window.arrayUnion({type: 'out', amount, to: targetCard, date: new Date().toLocaleString()})
  });
- transaction.update(doc(db, "users", recipientUid), {
+ transaction.update(window.doc(window.db, "users", recipientUid), {
  balance: rDoc.data().balance + amount,
- history: arrayUnion({type: 'in', amount, from: sDoc.data().cardNum, date: new Date().toLocaleString()})
+ history: window.arrayUnion({type: 'in', amount, from: sDoc.data().cardNum, date: new Date().toLocaleString()})
  });
  });
- showScreen('main-screen');
+ window.showScreen('main-screen');
  alert("Перевод выполнен!");
  } catch (e) { alert(e); }
  };
- // Мониторинг состояния
- onAuthStateChanged(auth, async (user) => {
+ // Мониторинг состояния (теперь доступен глобально)
+ window.onAuthStateChanged(window.auth, async (user) => {
  if (user) {
- const userDoc = await getDoc(doc(db, "users", user.uid));
+ const userDoc = await window.getDoc(window.doc(window.db, "users", user.uid));
  const data = userDoc.data();
  document.getElementById('user-name').innerText = data.name;
  document.getElementById('balance').innerText = data.balance + " ₽";
@@ -132,12 +125,13 @@
  <div class="text-gray-400 text-xs">${t.date}</div>
  </div>
  `).join('');
- showScreen('main-screen');
+ window.showScreen('main-screen');
  } else {
- showScreen('login-screen');
+ window.showScreen('login-screen');
  }
  });
- window.logout = () => signOut(auth);
+ window.logout = () => window.signOut(window.auth);
+
  // QR Генерация
  window.generateQR = () => {
  const amt = document.getElementById('req-amount').value;
@@ -147,7 +141,7 @@
  document.getElementById('qr-modal').classList.remove('hidden');
  };
  </script>
-
+ 
  <style>
  .orange-btn { @apply bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-full transition-all; }
  .card-gradient { background: linear-gradient(135deg, #ff9d2f 0%, #ff6b00 100%); }
