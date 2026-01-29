@@ -5,15 +5,110 @@
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>BingusBank | Твой надежный кот-банкир</title>
  <script src="https://cdn.tailwindcss.com"></script>
- <!-- Надежная ссылка для qrcode.min.js -->
- <script src="https://cdn.jsdelivr.net"></script>
+ <script src="https://cdnjs.cloudflare.com"></script>
 
  <!-- Firebase SDK: Загружаются глобальные скрипты (v8.10.1) -->
  <script src="https://www.gstatic.com"></script>
  <script src="https://www.gstatic.com"></script>
  <script src="https://www.gstatic.com"></script>
  
- <!-- Скрипт с вашей логикой -->
+ <style>
+ .orange-btn { @apply bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-full transition-all; }
+ .card-gradient { background: linear-gradient(135deg, #ff9d2f 0%, #ff6b00 100%); }
+ .blur-text { filter: blur(5px); cursor: pointer; }
+ </style>
+</head>
+<body>
+<!-- SCREEN: LOGIN -->
+ <div id="login-screen" class="screen flex flex-col items-center justify-center min-h-screen p-6">
+ <h1 class="text-4xl font-black text-orange-500 mb-8 italic">BINGUS BANK</h1>
+ <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
+ <input id="login-email" type="email" placeholder="Email" class="w-full mb-4 p-4 border rounded-2xl outline-none focus:border-orange-500">
+ <input id="login-pass" type="password" placeholder="Пароль" class="w-full mb-6 p-4 border rounded-2xl outline-none focus:border-orange-500">
+ <button onclick="handleLogin()" class="orange-btn w-full mb-4">Войти</button>
+ <button onclick="showScreen('reg-screen')" class="text-orange-500 font-medium w-full">Создать аккаунт</button>
+ </div>
+ </div>
+ <!-- SCREEN: REGISTER -->
+ <div id="reg-screen" class="screen hidden flex flex-col items-center justify-center min-h-screen p-6">
+ <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
+ <h2 class="text-2xl font-bold mb-6">Регистрация</h2>
+ <input id="reg-name" type="text" placeholder="Имя" class="w-full mb-4 p-4 border rounded-2xl outline-none">
+ <input id="reg-email" type="email" placeholder="Email" class="w-full mb-4 p-4 border rounded-2xl outline-none">
+ <input id="reg-pass" type="password" placeholder="Пароль" class="w-full mb-6 p-4 border rounded-2xl outline-none">
+ <button onclick="handleSignUp()" class="orange-btn w-full mb-4">Зарегистрироваться</button>
+ <button onclick="showScreen('login-screen')" class="text-gray-400 w-full text-sm">Назад</button>
+ </div>
+ </div>
+ <!-- SCREEN: MAIN -->
+ <div id="main-screen" class="screen hidden p-6 max-w-4xl mx-auto">
+ <div class="flex justify-between items-center mb-8">
+ <div>
+ <p class="text-gray-400">Привет,</p>
+ <h2 id="user-name" class="text-2xl font-bold text-orange-500">Bingus</h2>
+ </div>
+ <button onclick="logout()" class="bg-gray-200 px-4 py-2 rounded-full text-sm font-bold">Выйти</button>
+ </div>
+ <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+ <!-- Left: Card -->
+ <div>
+ <div class="card-gradient p-6 rounded-3xl text-white shadow-2xl h-56 flex flex-col justify-between mb-6">
+ <div class="flex justify-between items-start">
+ <span class="text-xl font-bold italic">BINGUS CARD</span>
+ <img src="https://img.icons8.com" class="w-12">
+ </div>
+ <div>
+ <p id="card-display-num" class="text-2xl tracking-widest mb-2 blur-text" onclick="this.classList.remove('blur-text')">•••• •••• •••• ••••</p>
+ <div class="flex gap-4 text-xs opacity-80">
+ <span>EXP: 12/28</span>
+ <span>CVV: ***</span>
+ </div>
+ </div>
+ </div>
+ <div class="mb-6">
+ <p class="text-gray-400 text-sm">Баланс</p>
+ <h1 id="balance" class="text-4xl font-black">0 ₽</h1>
+ </div>
+ <div class="flex gap-2">
+ <button onclick="showScreen('transfer-screen')" class="orange-btn flex-1 text-xs px-2">Перевести</button>
+ <button onclick="showScreen('request-screen')" class="orange-btn flex-1 text-xs px-2">Запросить</button>
+ <button onclick="alert('Откройте камеру для СБП')" class="orange-btn flex-1 text-xs px-2">СБП</button>
+ </div>
+ </div>
+ <!-- Right: History -->
+ <div class="bg-white p-6 rounded-3xl shadow-sm border h-[400px] flex flex-col">
+ <h3 class="font-bold mb-4">История транзакций</h3>
+ <div id="history-list" class="overflow-y-auto flex-1">
+ <!-- Транзакции будут тут -->
+ </div>
+ </div>
+ </div>
+ </div>
+ <!-- MODAL: TRANSFER -->
+ <div id="transfer-screen" class="screen hidden p-6 flex items-center justify-center min-h-screen">
+ <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
+ <h2 class="text-xl font-bold mb-6 italic text-orange-500">Перевод</h2>
+ <input id="target-card" type="text" placeholder="Номер карты получателя" class="w-full mb-4 p-4 border rounded-2xl">
+ <input id="transfer-amount" type="number" placeholder="Сумма" class="w-full mb-6 p-4 border rounded-2xl">
+ <button onclick="handleTransfer()" class="orange-btn w-full">Отправить</button>
+ <button onclick="showScreen('main-screen')" class="w-full mt-4 text-gray-400">Отмена</button>
+ </div>
+ </div>
+ <!-- MODAL: REQUEST (QR) -->
+ <div id="request-screen" class="screen hidden p-6 flex items-center justify-center min-h-screen">
+ <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
+ <h2 class="text-xl font-bold mb-6">Создать запрос</h2>
+ <input id="req-amount" type="number" placeholder="Сумма запроса" class="w-full mb-6 p-4 border rounded-2xl">
+ <button onclick="generateQR()" class="orange-btn w-full">Создать QR</button>
+ <div id="qr-modal" class="hidden mt-6 flex flex-col items-center">
+ <div id="qrcode" class="p-4 bg-white border mb-4"></div>
+ <p class="text-sm text-gray-500">Покажите этот код для оплаты</p>
+ </div>
+ <button onclick="showScreen('main-screen')" class="mt-8 text-orange-500">Закрыть</button>
+ </div>
+ </div>
+
+<!-- СКРИПТ С ЛОГИКОЙ ПЕРЕНЕСЕН СЮДА -->
  <script>
  // КОНФИГ FIREBASE (ВАШИ КЛЮЧИ)
  const firebaseConfig = {
@@ -34,8 +129,7 @@
  const FieldValue = firebase.firestore.FieldValue;
 
 
- // --- ЛОГИКА ИНТЕРФЕЙСА ---
- // Явно привязываем функции к объекту window для доступа из атрибутов onclick
+ // --- ЛОГИКА ИНТЕРФЕЙСА (все функции теперь доступны глобально через window) ---
  window.showScreen = (screenId) => {
  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
  document.getElementById(screenId).classList.remove('hidden');
@@ -136,101 +230,6 @@
  document.getElementById('qr-modal').classList.remove('hidden');
  };
  </script>
- 
- <style>
- .orange-btn { @apply bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-full transition-all; }
- .card-gradient { background: linear-gradient(135deg, #ff9d2f 0%, #ff6b00 100%); }
- .blur-text { filter: blur(5px); cursor: pointer; }
- </style>
-</head>
-<body>
-<!-- SCREEN: LOGIN -->
- <div id="login-screen" class="screen flex flex-col items-center justify-center min-h-screen p-6">
- <h1 class="text-4xl font-black text-orange-500 mb-8 italic">BINGUS BANK</h1>
- <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
- <input id="login-email" type="email" placeholder="Email" class="w-full mb-4 p-4 border rounded-2xl outline-none focus:border-orange-500">
- <input id="login-pass" type="password" placeholder="Пароль" class="w-full mb-6 p-4 border rounded-2xl outline-none focus:border-orange-500">
- <button onclick="handleLogin()" class="orange-btn w-full mb-4">Войти</button>
- <button onclick="showScreen('reg-screen')" class="text-orange-500 font-medium w-full">Создать аккаунт</button>
- </div>
- </div>
- <!-- SCREEN: REGISTER -->
- <div id="reg-screen" class="screen hidden flex flex-col items-center justify-center min-h-screen p-6">
- <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
- <h2 class="text-2xl font-bold mb-6">Регистрация</h2>
- <input id="reg-name" type="text" placeholder="Имя" class="w-full mb-4 p-4 border rounded-2xl outline-none">
- <input id="reg-email" type="email" placeholder="Email" class="w-full mb-4 p-4 border rounded-2xl outline-none">
- <input id="reg-pass" type="password" placeholder="Пароль" class="w-full mb-6 p-4 border rounded-2xl outline-none">
- <button onclick="handleSignUp()" class="orange-btn w-full mb-4">Зарегистрироваться</button>
- <button onclick="showScreen('login-screen')" class="text-gray-400 w-full text-sm">Назад</button>
- </div>
- </div>
- <!-- SCREEN: MAIN -->
- <div id="main-screen" class="screen hidden p-6 max-w-4xl mx-auto">
- <div class="flex justify-between items-center mb-8">
- <div>
- <p class="text-gray-400">Привет,</p>
- <h2 id="user-name" class="text-2xl font-bold text-orange-500">Bingus</h2>
- </div>
- <button onclick="logout()" class="bg-gray-200 px-4 py-2 rounded-full text-sm font-bold">Выйти</button>
- </div>
- <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
- <!-- Left: Card -->
- <div>
- <div class="card-gradient p-6 rounded-3xl text-white shadow-2xl h-56 flex flex-col justify-between mb-6">
- <div class="flex justify-between items-start">
- <span class="text-xl font-bold italic">BINGUS CARD</span>
- <img src="https://img.icons8.com" class="w-12">
- </div>
- <div>
- <p id="card-display-num" class="text-2xl tracking-widest mb-2 blur-text" onclick="this.classList.remove('blur-text')">•••• •••• •••• ••••</p>
- <div class="flex gap-4 text-xs opacity-80">
- <span>EXP: 12/28</span>
- <span>CVV: ***</span>
- </div>
- </div>
- </div>
- <div class="mb-6">
- <p class="text-gray-400 text-sm">Баланс</p>
- <h1 id="balance" class="text-4xl font-black">0 ₽</h1>
- </div>
- <div class="flex gap-2">
- <button onclick="showScreen('transfer-screen')" class="orange-btn flex-1 text-xs px-2">Перевести</button>
- <button onclick="showScreen('request-screen')" class="orange-btn flex-1 text-xs px-2">Запросить</button>
- <button onclick="alert('Откройте камеру для СБП')" class="orange-btn flex-1 text-xs px-2">СБП</button>
- </div>
- </div>
- <!-- Right: History -->
- <div class="bg-white p-6 rounded-3xl shadow-sm border h-[400px] flex flex-col">
- <h3 class="font-bold mb-4">История транзакций</h3>
- <div id="history-list" class="overflow-y-auto flex-1">
- <!-- Транзакции будут тут -->
- </div>
- </div>
- </div>
- </div>
- <!-- MODAL: TRANSFER -->
- <div id="transfer-screen" class="screen hidden p-6 flex items-center justify-center min-h-screen">
- <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
- <h2 class="text-xl font-bold mb-6 italic text-orange-500">Перевод</h2>
- <input id="target-card" type="text" placeholder="Номер карты получателя" class="w-full mb-4 p-4 border rounded-2xl">
- <input id="transfer-amount" type="number" placeholder="Сумма" class="w-full mb-6 p-4 border rounded-2xl">
- <button onclick="handleTransfer()" class="orange-btn w-full">Отправить</button>
- <button onclick="showScreen('main-screen')" class="w-full mt-4 text-gray-400">Отмена</button>
- </div>
- </div>
- <!-- MODAL: REQUEST (QR) -->
- <div id="request-screen" class="screen hidden p-6 flex items-center justify-center min-h-screen">
- <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
- <h2 class="text-xl font-bold mb-6">Создать запрос</h2>
- <input id="req-amount" type="number" placeholder="Сумма запроса" class="w-full mb-6 p-4 border rounded-2xl">
- <button onclick="generateQR()" class="orange-btn w-full">Создать QR</button>
- <div id="qr-modal" class="hidden mt-6 flex flex-col items-center">
- <div id="qrcode" class="p-4 bg-white border mb-4"></div>
- <p class="text-sm text-gray-500">Покажите этот код для оплаты</p>
- </div>
- <button onclick="showScreen('main-screen')" class="mt-8 text-orange-500">Закрыть</button>
- </div>
- </div>
+
 </body>
 </html>
