@@ -5,16 +5,16 @@
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>BingusBank | Твой надежный кот-банкир</title>
  <script src="https://cdn.tailwindcss.com"></script>
+ <script src="https://cdnjs.cloudflare.com"></script>
+
+ <!-- Firebase SDK: Использование глобальных скриптов (НЕ "type="module") для совместимости -->
+ <!-- Эти ссылки на gstatic должны работать корректно как глобальные скрипты -->
+ <script src="https://www.gstatic.com"></script>
+ <script src="https://www.gstatic.com"></script>
+ <script src="https://www.gstatic.com"></script>
  
- <!-- Использование надежного CDN для QRCode -->
- <script src="https://cdn.jsdelivr.net"></script>
- 
- <!-- Firebase SDK: Использование надежных ссылок Google CDN -->
- <script type="module">
- import { initializeApp } from "https://www.gstatic.com";
- import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com";
- import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs, runTransaction } from "https://www.gstatic.com";
- 
+ <!-- Скрипт с вашей логикой (также без "type="module") -->
+ <script>
  // КОНФИГ FIREBASE (ВАШИ КЛЮЧИ)
  const firebaseConfig = {
  apiKey: "AIzaSyDw7fAK6C-HecRqdilBRDmgEcYUgZ8K8Y8",
@@ -27,29 +27,14 @@
  measurementId: "G-QZQTJN2VBZ"
  };
 
- const app = initializeApp(firebaseConfig);
- // Привязка Firebase API к глобальному объекту window для доступа из атрибутов onclick
- window.auth = getAuth(app);
- window.db = getFirestore(app);
- window.arrayUnion = arrayUnion;
- window.doc = doc;
- window.setDoc = setDoc;
- window.getDoc = getDoc;
- window.updateDoc = updateDoc;
- window.runTransaction = runTransaction;
- window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
- window.signInWithEmailAndPassword = signInWithEmailAndPassword;
- window.onAuthStateChanged = onAuthStateChanged;
- window.signOut = signOut;
- window.query = query;
- window.collection = collection;
- window.where = where;
- window.getDocs = getDocs;
- </script>
+ // Инициализация Firebase (глобальные объекты firebase.auth, firebase.firestore и т.д. будут доступны)
+ firebase.initializeApp(firebaseConfig);
+ const auth = firebase.auth();
+ const db = firebase.firestore();
+ const FieldValue = firebase.firestore.FieldValue;
 
- <!-- Отдельный скрипт для логики приложения в глобальной области видимости -->
- <script>
- // --- ЛОГИКА ИНТЕРФЕЙСА (в глобальной области видимости window) ---
+
+ // --- ЛОГИКА ИНТЕРФЕЙСА (все функции теперь доступны глобально) ---
  window.showScreen = (screenId) => {
  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
  document.getElementById(screenId).classList.remove('hidden');
@@ -61,18 +46,19 @@
  const name = document.getElementById('reg-name').value;
  
  try {
- const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, pass);
+ // Используем глобальные методы Firebase
+ const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
  const user = userCredential.user;
  const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
  
- await window.setDoc(window.doc(window.db, "users", user.uid), {
+ await db.collection("users").doc(user.uid).set({
  name, email, cardNum,
  balance: 5000,
  cvv: Math.floor(100 + Math.random() * 900),
  exp: "12/28",
  history: []
  });
- await window.setDoc(window.doc(window.db, "cards", cardNum), { uid: user.uid });
+ await db.collection("cards").doc(cardNum).set({ uid: user.uid });
  alert("Успешная регистрация!");
  } catch (e) { alert(e.message); }
  };
@@ -80,7 +66,7 @@
  window.handleLogin = async () => {
  const email = document.getElementById('login-email').value;
  const pass = document.getElementById('login-pass').value;
- try { await window.signInWithEmailAndPassword(window.auth, email, pass); } 
+ try { await auth.signInWithEmailAndPassword(email, pass); } 
  catch (e) { alert("Ошибка входа"); }
  };
  // Перевод
@@ -91,24 +77,24 @@
  
  if(!pass) return;
  try {
- const cardRef = window.doc(window.db, "cards", targetCard);
- const cardSnap = await window.getDoc(cardRef);
- if(!cardSnap.exists()) throw new Error("Карта не найдена");
+ const cardRef = db.collection("cards").doc(targetCard);
+ const cardSnap = await cardRef.get();
+ if(!cardSnap.exists) throw new Error("Карта не найдена");
  
  const recipientUid = cardSnap.data().uid;
- const senderUid = window.auth.currentUser.uid;
- await window.runTransaction(window.db, async (transaction) => {
- const sDoc = await transaction.get(window.doc(window.db, "users", senderUid));
- const rDoc = await transaction.get(window.doc(window.db, "users", recipientUid));
+ const senderUid = auth.currentUser.uid;
+ await db.runTransaction(async (transaction) => {
+ const sDoc = await transaction.get(db.collection("users").doc(senderUid));
+ const rDoc = await transaction.get(db.collection("users").doc(recipientUid));
  
  if (sDoc.data().balance < amount) throw "Недостаточно средств";
- transaction.update(window.doc(window.db, "users", senderUid), {
+ transaction.update(db.collection("users").doc(senderUid), {
  balance: sDoc.data().balance - amount,
- history: window.arrayUnion({type: 'out', amount, to: targetCard, date: new Date().toLocaleString()})
+ history: FieldValue.arrayUnion({type: 'out', amount, to: targetCard, date: new Date().toLocaleString()})
  });
- transaction.update(window.doc(window.db, "users", recipientUid), {
+ transaction.update(db.collection("users").doc(recipientUid), {
  balance: rDoc.data().balance + amount,
- history: window.arrayUnion({type: 'in', amount, from: sDoc.data().cardNum, date: new Date().toLocaleString()})
+ history: FieldValue.arrayUnion({type: 'in', amount, from: sDoc.data().cardNum, date: new Date().toLocaleString()})
  });
  });
  window.showScreen('main-screen');
@@ -116,9 +102,9 @@
  } catch (e) { alert(e); }
  };
  // Мониторинг состояния
- window.onAuthStateChanged(window.auth, async (user) => {
+ auth.onAuthStateChanged(async (user) => {
  if (user) {
- const userDoc = await window.getDoc(window.doc(window.db, "users", user.uid));
+ const userDoc = await db.collection("users").doc(user.uid).get();
  const data = userDoc.data();
  document.getElementById('user-name').innerText = data.name;
  document.getElementById('balance').innerText = data.balance + " ₽";
@@ -138,7 +124,7 @@
  window.showScreen('login-screen');
  }
  });
- window.logout = () => window.signOut(window.auth);
+ window.logout = () => auth.signOut();
  // QR Генерация
  window.generateQR = () => {
  const amt = document.getElementById('req-amount').value;
@@ -156,8 +142,7 @@
  </style>
 </head>
 <body>
-<!-- ... ОСТАЛЬНОЙ HTML КОД БЕЗ ИЗМЕНЕНИЙ В ИНТЕРФЕЙСЕ ... -->
- <!-- SCREEN: LOGIN -->
+<!-- SCREEN: LOGIN -->
  <div id="login-screen" class="screen flex flex-col items-center justify-center min-h-screen p-6">
  <h1 class="text-4xl font-black text-orange-500 mb-8 italic">BINGUS BANK</h1>
  <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
