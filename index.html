@@ -6,16 +6,16 @@
  <title>BingusBank | Твой надежный кот-банкир</title>
  <script src="https://cdn.tailwindcss.com"></script>
  
- <!-- Использование jsDelivr для QRCode -->
+ <!-- Использование надежного CDN для QRCode -->
  <script src="https://cdn.jsdelivr.net"></script>
  
- <!-- Firebase SDK (Привязка API к глобальному объекту window) -->
+ <!-- Firebase SDK: Использование надежных ссылок Google CDN -->
  <script type="module">
- import { initializeApp } from "https://cdnjs.cloudflare.com";
- import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://cdnjs.cloudflare.com";
- import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs, runTransaction } from "https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.js";
+ import { initializeApp } from "https://www.gstatic.com";
+ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com";
+ import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs, runTransaction } from "https://www.gstatic.com";
  
- // КОНФИГ FIREBASE
+ // КОНФИГ FIREBASE (ВАШИ КЛЮЧИ)
  const firebaseConfig = {
  apiKey: "AIzaSyDw7fAK6C-HecRqdilBRDmgEcYUgZ8K8Y8",
  authDomain: "bingusbank-e34f4.firebaseapp.com",
@@ -45,8 +45,11 @@
  window.collection = collection;
  window.where = where;
  window.getDocs = getDocs;
+ </script>
 
- // --- ЛОГИКА ИНТЕРФЕЙСА (теперь в глобальной области видимости window) ---
+ <!-- Отдельный скрипт для логики приложения в глобальной области видимости -->
+ <script>
+ // --- ЛОГИКА ИНТЕРФЕЙСА (в глобальной области видимости window) ---
  window.showScreen = (screenId) => {
  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
  document.getElementById(screenId).classList.remove('hidden');
@@ -152,7 +155,8 @@
  .blur-text { filter: blur(5px); cursor: pointer; }
  </style>
 </head>
-<body class="bg-gray-50 font-sans text-gray-900">
+<body>
+<!-- ... ОСТАЛЬНОЙ HTML КОД БЕЗ ИЗМЕНЕНИЙ В ИНТЕРФЕЙСЕ ... -->
  <!-- SCREEN: LOGIN -->
  <div id="login-screen" class="screen flex flex-col items-center justify-center min-h-screen p-6">
  <h1 class="text-4xl font-black text-orange-500 mb-8 italic">BINGUS BANK</h1>
