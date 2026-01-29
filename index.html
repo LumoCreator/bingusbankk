@@ -5,13 +5,15 @@
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>BingusBank | Твой надежный кот-банкир</title>
  <script src="https://cdn.tailwindcss.com"></script>
- <script src="https://cdnjs.cloudflare.com"></script>
  
- <!-- Firebase SDK (Теперь все функции прикреплены к глобальному объекту window) -->
+ <!-- Использование jsDelivr для QRCode -->
+ <script src="https://cdn.jsdelivr.net"></script>
+ 
+ <!-- Firebase SDK (Привязка API к глобальному объекту window) -->
  <script type="module">
  import { initializeApp } from "https://cdnjs.cloudflare.com";
  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://cdnjs.cloudflare.com";
- import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs, runTransaction } from "https://cdnjs.cloudflare.com";
+ import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs, runTransaction } from "https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.js";
  
  // КОНФИГ FIREBASE
  const firebaseConfig = {
@@ -39,6 +41,10 @@
  window.signInWithEmailAndPassword = signInWithEmailAndPassword;
  window.onAuthStateChanged = onAuthStateChanged;
  window.signOut = signOut;
+ window.query = query;
+ window.collection = collection;
+ window.where = where;
+ window.getDocs = getDocs;
 
  // --- ЛОГИКА ИНТЕРФЕЙСА (теперь в глобальной области видимости window) ---
  window.showScreen = (screenId) => {
@@ -58,12 +64,11 @@
  
  await window.setDoc(window.doc(window.db, "users", user.uid), {
  name, email, cardNum,
- balance: 5000, // Подарок при регистрации
+ balance: 5000,
  cvv: Math.floor(100 + Math.random() * 900),
  exp: "12/28",
  history: []
  });
- // Индекс для поиска по карте
  await window.setDoc(window.doc(window.db, "cards", cardNum), { uid: user.uid });
  alert("Успешная регистрация!");
  } catch (e) { alert(e.message); }
@@ -107,7 +112,7 @@
  alert("Перевод выполнен!");
  } catch (e) { alert(e); }
  };
- // Мониторинг состояния (теперь доступен глобально)
+ // Мониторинг состояния
  window.onAuthStateChanged(window.auth, async (user) => {
  if (user) {
  const userDoc = await window.getDoc(window.doc(window.db, "users", user.uid));
@@ -131,7 +136,6 @@
  }
  });
  window.logout = () => window.signOut(window.auth);
-
  // QR Генерация
  window.generateQR = () => {
  const amt = document.getElementById('req-amount').value;
