@@ -1,276 +1,245 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>BingusBank | Твой надежный кот-банкир</title>
- <script src="https://cdn.tailwindcss.com"></script>
- <script src="https://cdnjs.cloudflare.com"></script>
- <style>
- .orange-btn { @apply bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105 shadow-md; }
- .card-gradient { background: linear-gradient(135deg, #ff9d2f 0%, #ff6b00 100%); }
- .blur-text { filter: blur(5px); cursor: pointer; transition: filter 0.5s ease; }
- .unblur { filter: blur(0); }
- .screen { @apply min-h-screen flex flex-col items-center justify-center p-6; }
- body { background-color: #f8f9fa; font-family: sans-serif; }
- .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 50; }
- .modal.active { display: flex; }
- </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BingusBank | Твой надежный кот-банкир</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com"></script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs, runTransaction } from "https://www.gstatic.com";
+
+        // КОНФИГ FIREBASE (ЗАМЕНИ НА СВОЙ ИЗ КОНСОЛИ)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- ЛОГИКА ИНТЕРФЕЙСА ---
+        window.showScreen = (screenId) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+        };
+
+        // Регистрация
+        window.handleSignUp = async () => {
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+            const name = document.getElementById('reg-name').value;
+            
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+                const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
+                
+                await setDoc(doc(db, "users", user.uid), {
+                    name, email, cardNum,
+                    balance: 5000, // Подарок при регистрации
+                    cvv: Math.floor(100 + Math.random() * 900),
+                    exp: "12/28",
+                    history: []
+                });
+                // Индекс для поиска по карте
+                await setDoc(doc(db, "cards", cardNum), { uid: user.uid });
+                alert("Успешная регистрация!");
+            } catch (e) { alert(e.message); }
+        };
+
+        // Вход
+        window.handleLogin = async () => {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            try { await signInWithEmailAndPassword(auth, email, pass); } 
+            catch (e) { alert("Ошибка входа"); }
+        };
+
+        // Перевод
+        window.handleTransfer = async () => {
+            const targetCard = document.getElementById('target-card').value;
+            const amount = parseFloat(document.getElementById('transfer-amount').value);
+            const pass = prompt("Введите пароль для подтверждения:");
+            
+            if(!pass) return;
+
+            try {
+                const cardRef = doc(db, "cards", targetCard);
+                const cardSnap = await getDoc(cardRef);
+                if(!cardSnap.exists()) throw new Error("Карта не найдена");
+                
+                const recipientUid = cardSnap.data().uid;
+                const senderUid = auth.currentUser.uid;
+
+                await runTransaction(db, async (transaction) => {
+                    const sDoc = await transaction.get(doc(db, "users", senderUid));
+                    const rDoc = await transaction.get(doc(db, "users", recipientUid));
+                    
+                    if (sDoc.data().balance < amount) throw "Недостаточно средств";
+
+                    transaction.update(doc(db, "users", senderUid), {
+                        balance: sDoc.data().balance - amount,
+                        history: arrayUnion({type: 'out', amount, to: targetCard, date: new Date().toLocaleString()})
+                    });
+                    transaction.update(doc(db, "users", recipientUid), {
+                        balance: rDoc.data().balance + amount,
+                        history: arrayUnion({type: 'in', amount, from: sDoc.data().cardNum, date: new Date().toLocaleString()})
+                    });
+                });
+                showScreen('main-screen');
+                alert("Перевод выполнен!");
+            } catch (e) { alert(e); }
+        };
+
+        // Мониторинг состояния
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                const data = userDoc.data();
+                document.getElementById('user-name').innerText = data.name;
+                document.getElementById('balance').innerText = data.balance + " ₽";
+                document.getElementById('card-display-num').innerText = data.cardNum.replace(/(.{4})/g, '$1 ');
+                
+                const histDiv = document.getElementById('history-list');
+                histDiv.innerHTML = data.history.reverse().map(t => `
+                    <div class="border-b py-2 text-sm">
+                        <span class="${t.type === 'in' ? 'text-green-500' : 'text-red-500'} font-bold">
+                            ${t.type === 'in' ? '+' : '-'}${t.amount} ₽
+                        </span>
+                        <div class="text-gray-400 text-xs">${t.date}</div>
+                    </div>
+                `).join('');
+
+                showScreen('main-screen');
+            } else {
+                showScreen('login-screen');
+            }
+        });
+
+        window.logout = () => signOut(auth);
+
+        // QR Генерация
+        window.generateQR = () => {
+            const amt = document.getElementById('req-amount').value;
+            const qrData = JSON.stringify({ card: document.getElementById('card-display-num').innerText.replace(/\s/g, ''), amount: amt });
+            document.getElementById('qrcode').innerHTML = "";
+            new QRCode(document.getElementById("qrcode"), qrData);
+            document.getElementById('qr-modal').classList.remove('hidden');
+        };
+    </script>
+
+    <style>
+        .orange-btn { @apply bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-full transition-all; }
+        .card-gradient { background: linear-gradient(135deg, #ff9d2f 0%, #ff6b00 100%); }
+        .blur-text { filter: blur(5px); cursor: pointer; }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-900">
 
- <!-- SCRIPTS -->
- <script type="module">
- // ИСПРАВЛЕННЫЕ ССЫЛКИ НА FIREBASE SDK ДЛЯ РАБОТЫ НА GITHUB PAGES
- import { initializeApp } from "https://www.gstatic.com";
- import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com";
- import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, query, collection, where, getDocs, runTransaction } from "https://www.gstatic.com";
- // NOTE: getAnalytics не использовался в коде из PDF, я его убрал.
- 
- // КОНФИГ FIREBASE С ВАШИМИ КЛЮЧАМИ
- const firebaseConfig = {
-    apiKey: "AIzaSyDw7fAK6C-HecRqdilBRDmgEcYUgZ8K8Y8",
-    authDomain: "bingusbank-e34f4.firebaseapp.com",
-    projectId: "bingusbank-e34f4",
-    storageBucket: "bingusbank-e34f4.firebasestorage.app",
-    messagingSenderId: "935491412417",
-    appId: "1:935491412417:web:c65608262025c5769dcf40"
- };
-
- const app = initializeApp(firebaseConfig);
- const auth = getAuth(app);
- const db = getFirestore(app);
-
- // --- ЛОГИКА ИНТЕРФЕЙСА ---
- window.showScreen = (screenId) => {
-  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-  document.getElementById(screenId).classList.remove('hidden');
- };
-
- window.openModal = (id) => document.getElementById(id).classList.add('active');
- window.closeModal = (id) => document.getElementById(id).classList.remove('active');
-
- // Регистрация
- window.handleSignUp = async () => {
-  const email = document.getElementById('reg-email').value;
-  const pass = document.getElementById('reg-pass').value;
-  const name = document.getElementById('reg-name').value;
-  
-  try {
-   const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-   const user = userCredential.user;
-   const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
-   
-   await setDoc(doc(db, "users", user.uid), {
-    name, email, cardNum,
-    balance: 5000, // Подарок при регистрации
-    cvv: Math.floor(100 + Math.random() * 900),
-    exp: "12/28",
-    history: []
-   });
-   // Индекс для поиска по карте
-   await setDoc(doc(db, "cards", cardNum), { uid: user.uid });
-   alert("Успешная регистрация! Теперь войдите в аккаунт.");
-   showScreen('login-screen');
-  } catch (e) { alert("Ошибка регистрации: " + e.message); }
- };
-
- // Вход
- window.handleLogin = async () => {
-  const email = document.getElementById('login-email').value;
-  const pass = document.getElementById('login-pass').value;
-  try { 
-    await signInWithEmailAndPassword(auth, email, pass); 
-  } catch (e) { 
-    alert("Ошибка входа"); 
-  }
- };
-
- // Перевод
- window.handleTransfer = async () => {
-  const targetCard = document.getElementById('target-card').value.replace(/\s/g, '');
-  const amount = parseFloat(document.getElementById('transfer-amount').value);
-  
-  if(!amount || amount <= 0) return alert("Неверная сумма.");
-  
-  const pass = prompt("Введите пароль для подтверждения:");
-  if(!pass) return;
-  // В реальном приложении пароль нужно проверять через сервер, это имитация
-
-  try {
-   const cardRef = doc(db, "cards", targetCard);
-   const cardSnap = await getDoc(cardRef);
-   if(!cardSnap.exists()) throw new Error("Карта не найдена");
-   
-   const recipientUid = cardSnap.data().uid;
-   const senderUid = auth.currentUser.uid;
-
-   if (recipientUid === senderUid) throw new Error("Нельзя перевести самому себе!");
-
-   await runTransaction(db, async (transaction) => {
-    const sDoc = await transaction.get(doc(db, "users", senderUid));
-    const rDoc = await transaction.get(doc(db, "users", recipientUid));
-    
-    if (sDoc.data().balance < amount) throw "Недостаточно средств";
-
-    transaction.update(doc(db, "users", senderUid), {
-     balance: sDoc.data().balance - amount,
-     history: arrayUnion({type: 'out', amount, to: targetCard, date: new Date().toLocaleString()})
-    });
-    transaction.update(doc(db, "users", recipientUid), {
-     balance: rDoc.data().balance + amount,
-     history: arrayUnion({type: 'in', amount, from: sDoc.data().cardNum, date: new Date().toLocaleString()})
-    });
-   });
-   showScreen('main-screen');
-   alert("Перевод выполнен!");
-  } catch (e) { alert(e); }
- };
-
- // Мониторинг состояния
- onAuthStateChanged(auth, async (user) => {
-  if (user) {
-   const userDoc = await getDoc(doc(db, "users", user.uid));
-   const data = userDoc.data();
-   if(!data) return;
-
-   document.getElementById('user-name').innerText = data.name;
-   document.getElementById('balance').innerText = data.balance + " ₽";
-   document.getElementById('card-display-num').innerText = data.cardNum.replace(/(.{4})/g, '$1 ');
-   
-   const histDiv = document.getElementById('history-list');
-   histDiv.innerHTML = data.history.reverse().map(t => `
-    <div class="border-b py-3 text-sm flex justify-between items-center px-2 hover:bg-gray-50 transition-colors">
-    <span class="${t.type === 'in' ? 'text-green-500' : 'text-red-500'} font-bold">
-    ${t.type === 'in' ? '+' : '-'}${t.amount} ₽
-    </span>
-    <div class="text-gray-400 text-xs">${t.date}</div>
+    <!-- SCREEN: LOGIN -->
+    <div id="login-screen" class="screen flex flex-col items-center justify-center min-h-screen p-6">
+        <h1 class="text-4xl font-black text-orange-500 mb-8 italic">BINGUS BANK</h1>
+        <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
+            <input id="login-email" type="email" placeholder="Email" class="w-full mb-4 p-4 border rounded-2xl outline-none focus:border-orange-500">
+            <input id="login-pass" type="password" placeholder="Пароль" class="w-full mb-6 p-4 border rounded-2xl outline-none focus:border-orange-500">
+            <button onclick="handleLogin()" class="orange-btn w-full mb-4">Войти</button>
+            <button onclick="showScreen('reg-screen')" class="text-orange-500 font-medium w-full">Создать аккаунт</button>
+        </div>
     </div>
-   `).join('');
-   showScreen('main-screen');
-  } else {
-   showScreen('login-screen');
-  }
- });
- window.logout = () => signOut(auth);
 
- // QR Генерация
- window.generateQR = () => {
-  const amt = document.getElementById('req-amount').value;
-  const card = document.getElementById('card-display-num').innerText.replace(/\s/g, '');
-  if (!amt || amount <= 0) return alert("Введите сумму");
-
-  const qrData = JSON.stringify({ card: card, amount: amt });
-  document.getElementById('qrcode').innerHTML = "";
-  new QRCode(document.getElementById("qrcode"), qrData);
-  // Открываем модалку, а не просто показываем div
-  openModal('qr-modal'); 
- };
-
- window.unblurCard = () => {
-    document.getElementById('card-display-num').classList.add('unblur');
-    setTimeout(() => document.getElementById('card-display-num').classList.remove('unblur'), 5000);
- };
- </script>
-
-
- <!-- SCREEN: LOGIN -->
- <div id="login-screen" class="screen">
-  <h1 class="text-4xl font-black text-orange-500 mb-8 italic">BINGUS BANK</h1>
-  <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
-  <input id="login-email" type="email" placeholder="Email" class="w-full mb-4 p-4 border rounded-2xl outline-none focus:border-orange-500">
-  <input id="login-pass" type="password" placeholder="Пароль" class="w-full mb-6 p-4 border rounded-2xl outline-none focus:border-orange-500">
-  <button onclick="handleLogin()" class="orange-btn w-full mb-4">Войти</button>
-  <button onclick="showScreen('reg-screen')" class="text-orange-500 font-medium w-full hover:underline">Создать аккаунт</button>
-  </div>
- </div>
-
- <!-- SCREEN: REGISTER -->
- <div id="reg-screen" class="screen hidden">
-  <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
-  <h2 class="text-2xl font-bold mb-6">Регистрация</h2>
-  <input id="reg-name" type="text" placeholder="Имя" class="w-full mb-4 p-4 border rounded-2xl outline-none focus:border-orange-500">
-  <input id="reg-email" type="email" placeholder="Email" class="w-full mb-4 p-4 border rounded-2xl outline-none focus:border-orange-500">
-  <input id="reg-pass" type="password" placeholder="Пароль" class="w-full mb-6 p-4 border rounded-2xl outline-none focus:border-orange-500">
-  <button onclick="handleSignUp()" class="orange-btn w-full mb-4">Зарегистрироваться</button>
-  <button onclick="showScreen('login-screen')" class="text-gray-400 w-full text-sm hover:underline">Назад</button>
-  </div>
- </div>
-
- <!-- SCREEN: MAIN -->
- <div id="main-screen" class="screen hidden !justify-start !items-start max-w-4xl mx-auto pt-12">
-  <div class="flex justify-between items-center mb-10 w-full">
-  <div>
-  <p class="text-gray-400">Привет,</p>
-  <h2 id="user-name" class="text-2xl font-bold text-orange-500">Загрузка</h2>
-  </div>
-  <button onclick="logout()" class="bg-gray-200 px-6 py-2 rounded-full text-sm font-bold hover:bg-red-100 hover:text-red-600 transition-colors">Выйти</button>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-  <!-- Left: Card & Actions -->
-  <div>
-  <div class="card-gradient p-6 rounded-3xl text-white shadow-2xl h-56 flex flex-col justify-between mb-6">
-  <div class="flex justify-between items-start">
-  <span class="text-xl font-bold italic">BINGUS CARD</span>
-  <img src="https://img.icons8.com" class="w-12">
-  </div>
-  <div>
-  <p onclick="unblurCard()" id="card-display-num" class="text-2xl tracking-widest mb-2 blur-text">•••• •••• •••• ••••</p>
-  <div class="flex gap-4 text-xs opacity-80">
-  <span id="card-date-exp">EXP: 12/28</span>
-  <span id="card-cvv-val">CVV: ***</span>
-  </div>
-  </div>
-  </div>
-  <div class="mb-6">
-  <p class="text-gray-400 text-sm">Баланс</p>
-  <h1 id="balance" class="text-4xl font-black">0 ₽</h1>
-  </div>
-  <div class="flex gap-4">
-  <button onclick="showScreen('transfer-screen')" class="orange-btn flex-1 text-sm px-2">Перевести</button>
-  <button onclick="showScreen('request-screen')" class="orange-btn flex-1 text-sm px-2">Запросить</button>
-  <button onclick="alert('Откройте камеру для СБП')" class="orange-btn flex-1 text-sm px-2">СБП</button>
-  </div>
-  </div>
-  <!-- Right: History -->
-  <div class="bg-white p-6 rounded-3xl shadow-lg border h-[500px] flex flex-col">
-  <h3 class="font-bold mb-4 text-lg">История транзакций</h3>
-  <div id="history-list" class="overflow-y-auto flex-1">
-  <!-- Транзакции будут тут -->
-  </div>
-  </div>
-  </div>
- </div>
-
- <!-- SCREEN: TRANSFER -->
- <div id="transfer-screen" class="screen hidden">
-  <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
-  <h2 class="text-xl font-bold mb-6 italic text-orange-500">Перевод</h2>
-  <input id="target-card" type="text" placeholder="Номер карты получателя" class="w-full mb-4 p-4 border rounded-2xl focus:border-orange-500 outline-none">
-  <input id="transfer-amount" type="number" placeholder="Сумма" class="w-full mb-6 p-4 border rounded-2xl focus:border-orange-500 outline-none">
-  <button onclick="handleTransfer()" class="orange-btn w-full">Отправить</button>
-  <button onclick="showScreen('main-screen')" class="w-full mt-4 text-gray-400 hover:text-orange-500 font-bold">Отмена</button>
-  </div>
- </div>
-
- <!-- SCREEN: REQUEST (QR) -->
- <div id="request-screen" class="screen hidden">
-  <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
-  <h2 class="text-xl font-bold mb-6">Создать запрос</h2>
-  <input id="req-amount" type="number" placeholder="Сумма запроса" class="w-full mb-6 p-4 border rounded-2xl focus:border-orange-500 outline-none text-center">
-  <button onclick="generateQR()" class="orange-btn w-full">Создать QR</button>
-  <button onclick="showScreen('main-screen')" class="mt-8 text-orange-500 font-bold hover:underline">Закрыть</button>
-  </div>
- </div>
-
- <!-- MODAL: QR Display -->
- <div id="qr-modal" class="modal">
-    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-xs text-center">
-        <h3 class="text-xl font-bold mb-4">Ваш QR-код</h3>
-        <div id="qrcode" class="p-4 bg-white border mb-4 flex justify-center"></div>
-        <p class="text-sm text-gray-500">Покажите этот код для оплаты</p>
-        <button onclick="closeModal('qr-modal')" class="mt-6 orange-btn w-full">Готово</button>
+    <!-- SCREEN: REGISTER -->
+    <div id="reg-screen" class="screen hidden flex flex-col items-center justify-center min-h-screen p-6">
+        <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-6">Регистрация</h2>
+            <input id="reg-name" type="text" placeholder="Имя" class="w-full mb-4 p-4 border rounded-2xl outline-none">
+            <input id="reg-email" type="email" placeholder="Email" class="w-full mb-4 p-4 border rounded-2xl outline-none">
+            <input id="reg-pass" type="password" placeholder="Пароль" class="w-full mb-6 p-4 border rounded-2xl outline-none">
+            <button onclick="handleSignUp()" class="orange-btn w-full mb-4">Зарегистрироваться</button>
+            <button onclick="showScreen('login-screen')" class="text-gray-400 w-full text-sm">Назад</button>
+        </div>
     </div>
- </div>
+
+    <!-- SCREEN: MAIN -->
+    <div id="main-screen" class="screen hidden p-6 max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <p class="text-gray-400">Привет,</p>
+                <h2 id="user-name" class="text-2xl font-bold text-orange-500">Bingus</h2>
+            </div>
+            <button onclick="logout()" class="bg-gray-200 px-4 py-2 rounded-full text-sm font-bold">Выйти</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left: Card -->
+            <div>
+                <div class="card-gradient p-6 rounded-3xl text-white shadow-2xl h-56 flex flex-col justify-between mb-6">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xl font-bold italic">BINGUS CARD</span>
+                        <img src="https://img.icons8.com" class="w-12">
+                    </div>
+                    <div>
+                        <p id="card-display-num" class="text-2xl tracking-widest mb-2 blur-text" onclick="this.classList.remove('blur-text')">•••• •••• •••• ••••</p>
+                        <div class="flex gap-4 text-xs opacity-80">
+                            <span>EXP: 12/28</span>
+                            <span>CVV: ***</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <p class="text-gray-400 text-sm">Баланс</p>
+                    <h1 id="balance" class="text-4xl font-black">0 ₽</h1>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="showScreen('transfer-screen')" class="orange-btn flex-1 text-xs px-2">Перевести</button>
+                    <button onclick="showScreen('request-screen')" class="orange-btn flex-1 text-xs px-2">Запросить</button>
+                    <button onclick="alert('Откройте камеру для СБП')" class="orange-btn flex-1 text-xs px-2">СБП</button>
+                </div>
+            </div>
+
+            <!-- Right: History -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border h-[400px] flex flex-col">
+                <h3 class="font-bold mb-4">История транзакций</h3>
+                <div id="history-list" class="overflow-y-auto flex-1">
+                    <!-- Транзакции будут тут -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: TRANSFER -->
+    <div id="transfer-screen" class="screen hidden p-6 flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
+            <h2 class="text-xl font-bold mb-6 italic text-orange-500">Перевод</h2>
+            <input id="target-card" type="text" placeholder="Номер карты получателя" class="w-full mb-4 p-4 border rounded-2xl">
+            <input id="transfer-amount" type="number" placeholder="Сумма" class="w-full mb-6 p-4 border rounded-2xl">
+            <button onclick="handleTransfer()" class="orange-btn w-full">Отправить</button>
+            <button onclick="showScreen('main-screen')" class="w-full mt-4 text-gray-400">Отмена</button>
+        </div>
+    </div>
+
+    <!-- MODAL: REQUEST (QR) -->
+    <div id="request-screen" class="screen hidden p-6 flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
+            <h2 class="text-xl font-bold mb-6">Создать запрос</h2>
+            <input id="req-amount" type="number" placeholder="Сумма запроса" class="w-full mb-6 p-4 border rounded-2xl">
+            <button onclick="generateQR()" class="orange-btn w-full">Создать QR</button>
+            <div id="qr-modal" class="hidden mt-6 flex flex-col items-center">
+                <div id="qrcode" class="p-4 bg-white border mb-4"></div>
+                <p class="text-sm text-gray-500">Покажите этот код для оплаты</p>
+            </div>
+            <button onclick="showScreen('main-screen')" class="mt-8 text-orange-500">Закрыть</button>
+        </div>
+    </div>
+
 </body>
 </html>
