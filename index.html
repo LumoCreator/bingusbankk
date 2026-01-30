@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BingusBank — Ваш цифровой банк</title>
+    <title>BingusBank — Твой пёс помощник.</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -11,22 +11,21 @@
 
     <style>
         :root {
-            --primary: #FF6B00; /* Оранжевый акцент */
+            --primary: #FF6B00;
             --primary-dark: #E56000;
             --secondary: #FFF3E0;
-            --bg: #F2F4F7;
+            --bg: #F5F7FA;
             --white: #FFFFFF;
-            --text: #1A1A1A;
-            --gray: #94A3B8;
-            --error: #EF4444;
+            --text: #2D2D2D;
+            --gray: #9E9E9E;
             --success: #22C55E;
-            --overlay: rgba(0,0,0,0.6);
+            --overlay: rgba(0,0,0,0.5);
         }
 
         * { 
             box-sizing: border-box; 
-            transition: all 0.2s ease-in-out;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            transition: all 0.25s ease;
+            font-family: 'Segoe UI', Roboto, sans-serif; 
         }
 
         body {
@@ -37,13 +36,12 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
-        /* Прелоадер для устранения мигания интерфейса */
-        #preloader {
+        /* Загрузочный экран (убирает баг с прыжками страниц) */
+        #loading-screen {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top:0; left:0; width:100%; height:100%;
             background: var(--bg);
             display: flex;
             justify-content: center;
@@ -54,49 +52,46 @@
         .app-container { 
             width: 100%; 
             max-width: 420px; 
-            height: 100vh;
+            height: 100vh; 
             max-height: 850px;
             position: relative;
         }
 
         .screen {
             background: var(--bg);
-            width: 100%;
-            height: 100%;
             padding: 25px;
             display: none;
             flex-direction: column;
+            width: 100%;
+            height: 100%;
             overflow-y: auto;
             position: absolute;
-            top: 0;
-            left: 0;
+            animation: fadeIn 0.4s ease;
         }
 
-        .screen.active { display: flex; animation: slideIn 0.3s ease-out; }
+        .screen.active { display: flex; }
 
-        @keyframes slideIn {
-            from { transform: translateX(20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Заголовки и текст */
-        h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
-        .subtitle { color: var(--gray); font-size: 15px; margin-bottom: 30px; }
+        h2 { margin: 0 0 10px 0; font-size: 26px; font-weight: 800; }
+        p { color: var(--gray); margin-bottom: 25px; font-size: 15px; }
 
-        /* Поля ввода */
-        .input-group { margin-bottom: 16px; }
         input {
             width: 100%;
-            padding: 16px;
-            border: 1px solid #E2E8F0;
-            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 15px;
+            border: 2px solid #EAECEF;
+            border-radius: 20px;
             font-size: 16px;
-            background: var(--white);
             outline: none;
+            background: var(--white);
         }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(255,107,0,0.1); }
 
-        /* Кнопки */
+        input:focus { border-color: var(--primary); }
+
         .btn {
             width: 100%;
             padding: 18px;
@@ -105,13 +100,13 @@
             border: none;
             border-radius: 20px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
         }
-        .btn:active { transform: scale(0.98); }
+
         .btn-link {
             background: none; border: none; color: var(--primary);
-            font-weight: 600; margin-top: 20px; cursor: pointer;
+            font-weight: 600; margin-top: 15px; cursor: pointer;
         }
 
         /* Слайдер карт */
@@ -119,7 +114,7 @@
             display: flex;
             overflow-x: auto;
             gap: 15px;
-            padding: 10px 5px 25px 5px;
+            padding: 10px 0 25px 0;
             scrollbar-width: none;
         }
         .cards-slider::-webkit-scrollbar { display: none; }
@@ -127,38 +122,37 @@
         .bank-card {
             min-width: 300px;
             height: 190px;
-            border-radius: 24px;
+            border-radius: 25px;
             padding: 25px;
             color: white;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            position: relative;
+            box-shadow: 0 12px 25px rgba(0,0,0,0.1);
         }
 
-        .card-balance { font-size: 26px; font-weight: 700; }
-        .card-number { font-family: 'Courier New', monospace; font-size: 18px; letter-spacing: 1px; }
+        .card-balance { font-size: 28px; font-weight: 800; }
+        .card-number { font-family: 'Courier New', monospace; letter-spacing: 2px; font-size: 17px; }
 
         /* История транзакций */
-        .history-section {
+        .history-container {
             background: var(--white);
-            border-radius: 30px 30px 0 0;
-            padding: 25px;
-            margin: 0 -25px;
+            border-radius: 30px;
+            padding: 20px;
+            margin-top: 20px;
             flex-grow: 1;
         }
-        .transaction-item {
+
+        .tx-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
             padding: 15px 0;
-            border-bottom: 1px solid #F1F5F9;
+            border-bottom: 1px solid #F0F0F0;
         }
         .tx-info b { display: block; font-size: 15px; }
-        .tx-info small { color: var(--gray); }
+        .tx-info span { font-size: 12px; color: var(--gray); }
         .tx-amount { font-weight: 700; }
-        .tx-positive { color: var(--success); }
+        .tx-plus { color: var(--success); }
 
         /* Модальные окна */
         .modal-overlay {
@@ -166,119 +160,98 @@
             top: 0; left: 0; width: 100%; height: 100%;
             background: var(--overlay);
             display: none; justify-content: center; align-items: center;
-            z-index: 2000; backdrop-filter: blur(4px);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
         }
+
         .modal {
-            background: white; padding: 30px; border-radius: 28px;
-            width: 90%; max-width: 350px; text-align: center;
+            background: white; padding: 30px; border-radius: 30px;
+            width: 90%; max-width: 360px; text-align: center;
         }
 
-        /* Специфические элементы */
-        .close-circle {
-            position: absolute; top: 20px; right: 20px;
-            width: 35px; height: 35px; background: #eee;
-            border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; cursor: pointer; font-size: 20px;
-        }
-
-        .color-picker {
-            display: flex; gap: 10px; justify-content: center; margin: 15px 0;
-        }
         .color-opt {
-            width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
-            border: 2px solid transparent;
+            width: 35px; height: 35px; border-radius: 50%; cursor: pointer;
+            border: 3px solid #eee;
         }
-        .color-opt.active { border-color: #000; }
+        .color-opt.active { border-color: var(--primary); }
+
+        .close-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: #eee; border-radius: 50%; width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-<div id="preloader">
-    <div style="color: var(--primary); font-weight: bold; font-size: 24px;">BingusBank...</div>
+<div id="loading-screen">
+    <h2 style="color: var(--primary)">BingusBank...</h2>
 </div>
 
 <div class="app-container">
 
     <div id="screen-login" class="screen">
         <h2>С возвращением</h2>
-        <p class="subtitle">Войдите в свой Bingus аккаунт</p>
-        <input type="email" id="login-email" placeholder="Email" class="input-group">
-        <input type="password" id="login-password" placeholder="Пароль" class="input-group">
+        <p>Вход в систему</p>
+        <input type="email" id="login-email" placeholder="Email">
+        <input type="password" id="login-password" placeholder="Пароль">
         <button class="btn" onclick="login()">Войти</button>
-        <button class="btn-link" onclick="showScreen('screen-reg')">Стать клиентом банка</button>
+        <button class="btn-link" onclick="showScreen('screen-reg')">Создать аккаунт</button>
     </div>
 
     <div id="screen-reg" class="screen">
         <h2>Регистрация</h2>
-        <p class="subtitle">Счет за 30 секунд — это реально</p>
-        <input type="text" id="reg-name" placeholder="Имя и Фамилия" class="input-group">
-        <input type="email" id="reg-email" placeholder="Email" class="input-group">
-        <input type="password" id="reg-password" placeholder="Придумайте пароль" class="input-group">
+        <p>Стань клиентом за 30 секунд</p>
+        <input type="text" id="reg-name" placeholder="Имя Фамилия">
+        <input type="email" id="reg-email" placeholder="Email">
+        <input type="password" id="reg-password" placeholder="Пароль (мин. 6 знаков)">
         <button class="btn" onclick="register()">Открыть счет</button>
-        <button class="btn-link" onclick="showScreen('screen-login')">У меня уже есть аккаунт</button>
+        <button class="btn-link" onclick="showScreen('screen-login')">Уже есть счет</button>
     </div>
 
     <div id="screen-main" class="screen">
-        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-            <div>
-                <small style="color: var(--gray)">Привет,</small>
-                <div style="font-weight: 800; font-size: 20px;" id="user-name">Загрузка...</div>
-            </div>
-            <div onclick="logout()" style="background: #e2e8f0; padding: 10px 15px; border-radius: 12px; cursor: pointer; font-size: 14px;">Выйти</div>
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div id="user-name" style="font-weight: 800; font-size: 20px;">Загрузка...</div>
+            <span onclick="logout()" style="color: var(--gray); cursor: pointer; font-weight: 600;">Выйти</span>
         </div>
         
         <div class="cards-slider" id="cards-container">
             </div>
 
-        <button class="btn-link" style="margin: -10px 0 20px 0; text-align: left;" onclick="openNewCardModal()">+ Выпустить новую карту</button>
+        <button class="btn-link" onclick="openCardModal()" style="margin-top:-10px; margin-bottom:20px; text-align: left;">+ Выпустить новую карту</button>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 30px;">
-            <button class="act-btn" onclick="showScreen('screen-transfer')" style="background: var(--white); border:none; padding: 15px; border-radius: 20px; color: var(--primary); font-weight: 700;">Перевод</button>
-            <button class="act-btn" style="background: var(--white); border:none; padding: 15px; border-radius: 20px; color: var(--gray); font-weight: 700;">СБП</button>
-            <button class="act-btn" style="background: var(--white); border:none; padding: 15px; border-radius: 20px; color: var(--gray); font-weight: 700;">Платежи</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+            <button class="btn" style="padding: 12px; font-size: 13px;" onclick="showScreen('screen-transfer')">Перевод</button>
+            <button class="btn" style="padding: 12px; font-size: 13px; background: #eee; color: #000;">СБП</button>
+            <button class="btn" style="padding: 12px; font-size: 13px; background: #eee; color: #000;">Оплата</button>
         </div>
 
-        <div class="history-section">
-            <h3 style="margin-top: 0; font-size: 18px;">История операций</h3>
+        <div class="history-container">
+            <h3 style="margin: 0 0 15px 0; font-size: 18px;">История</h3>
             <div id="transaction-list">
-                <p style="color: var(--gray); text-align: center; font-size: 14px; margin-top: 20px;">Операций пока нет</p>
+                <p style="text-align: center; color: var(--gray); font-size: 14px;">Пока нет операций</p>
             </div>
         </div>
     </div>
 
     <div id="screen-transfer" class="screen">
-        <div class="close-circle" onclick="showScreen('screen-main')">✕</div>
+        <div class="close-btn" onclick="showScreen('screen-main')">✕</div>
         <h2>Перевод</h2>
         <div id="t-step-1">
-            <p class="subtitle">По номеру телефона или карты</p>
-            <input type="text" id="search-input" placeholder="Email или номер карты" class="input-group">
+            <p>Введите Email получателя</p>
+            <input type="text" id="search-input" placeholder="Email или номер карты">
             <button class="btn" onclick="findRecipient()">Далее</button>
         </div>
         <div id="t-step-2" style="display:none; text-align: center;">
             <p>Получатель: <strong id="recipient-display">...</strong></p>
-            <input type="number" id="amount-input" placeholder="Сумма (₽)" class="input-group">
-            <button class="btn" onclick="requestAuth('transfer')">Подтвердить</button>
+            <input type="number" id="amount-input" placeholder="Сумма ₽">
+            <button class="btn" onclick="requestAuth('transfer')">Отправить</button>
         </div>
-        <div id="t-success" style="display:none; text-align: center; padding-top: 50px;">
-            <div style="font-size: 80px; color: var(--success);">✓</div>
-            <h3>Готово!</h3>
-            <p class="subtitle">Деньги успешно отправлены</p>
-            <button class="btn" onclick="location.reload()">Вернуться на главную</button>
+        <div id="t-success" style="display:none; text-align: center;">
+            <div style="font-size: 60px; color: var(--success); margin: 20px 0;">✓</div>
+            <h3>Успешно!</h3>
+            <button class="btn" onclick="location.reload()">Вернуться</button>
         </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="card-modal">
-    <div class="modal">
-        <h3>Новая карта</h3>
-        <p>Выберите цвет оформления</p>
-        <div class="color-picker">
-            <div class="color-opt active" style="background: linear-gradient(135deg, #FF9000, #FF6B00)" data-color="linear-gradient(135deg, #FF9000, #FF6B00)"></div>
-            <div class="color-opt" style="background: linear-gradient(135deg, #444, #111)" data-color="linear-gradient(135deg, #444, #111)"></div>
-            <div class="color-opt" style="background: linear-gradient(135deg, #6366F1, #4338CA)" data-color="linear-gradient(135deg, #6366F1, #4338CA)"></div>
-        </div>
-        <button class="btn" onclick="issueNewCard()">Выпустить</button>
-        <button class="btn-link" onclick="closeCardModal()">Отмена</button>
     </div>
 </div>
 
@@ -286,14 +259,27 @@
     <div class="modal">
         <h3>Подтверждение</h3>
         <p>Введите пароль для операции</p>
-        <input type="password" id="confirm-password" placeholder="Ваш пароль" class="input-group">
+        <input type="password" id="confirm-password" placeholder="Пароль">
         <button class="btn" id="modal-confirm-btn">Подтвердить</button>
         <button class="btn-link" onclick="closeModal()">Отмена</button>
     </div>
 </div>
 
+<div class="modal-overlay" id="card-modal">
+    <div class="modal">
+        <h3>Новая карта</h3>
+        <p>Выберите стиль оформления</p>
+        <div style="display:flex; gap:15px; justify-content: center; margin-bottom: 20px;">
+            <div class="color-opt active" style="background: linear-gradient(135deg, #FF9000, #FF6B00)" data-color="linear-gradient(135deg, #FF9000, #FF6B00)"></div>
+            <div class="color-opt" style="background: linear-gradient(135deg, #2D2D2D, #000)" data-color="linear-gradient(135deg, #2D2D2D, #000)"></div>
+            <div class="color-opt" style="background: linear-gradient(135deg, #4A90E2, #357ABD)" data-color="linear-gradient(135deg, #4A90E2, #357ABD)"></div>
+        </div>
+        <button class="btn" onclick="issueNewCard()">Выпустить карту</button>
+        <button class="btn-link" onclick="closeCardModal()">Отмена</button>
+    </div>
+</div>
+
 <script>
-    // Конфигурация (оставляем вашу)
     const firebaseConfig = {
         apiKey: "AIzaSyBYAFyV2_WHPWSrL7vgOjvOV8xi7E7tIko",
         authDomain: "bingusbank-589aa.firebaseapp.com",
@@ -311,77 +297,73 @@
     let myCards = [];
     let targetUser = null;
     let currentTask = null;
-    let selectedCardColor = "linear-gradient(135deg, #FF9000, #FF6B00)";
+    let selectedCardStyle = "linear-gradient(135deg, #FF9000, #FF6B00)";
 
-    // Управление экранами
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    // Инициализация при загрузке
+    // Инициализация
     auth.onAuthStateChanged(async (user) => {
-        const preloader = document.getElementById('preloader');
         if (user) {
-            const doc = await db.collection('users').doc(user.uid).get();
+            const userRef = db.collection('users').doc(user.uid);
+            const doc = await userRef.get();
             myData = doc.data();
+
+            // Поиск карт в подколлекции
+            let cardsSnap = await userRef.collection('cards').get();
             
-            // Загрузка карт
-            const cardsSnap = await db.collection('users').doc(user.uid).collection('cards').get();
+            // Фикс: если карт в подколлекции нет (старый юзер), мигрируем
+            if (cardsSnap.empty && myData.cardNum) {
+                await userRef.collection('cards').add({
+                    cardNum: myData.cardNum,
+                    color: "linear-gradient(135deg, #FF9000, #FF6B00)",
+                    expiry: myData.expiry || "01/30",
+                    cvv: myData.cvv || "777"
+                });
+                cardsSnap = await userRef.collection('cards').get();
+            }
+
             myCards = cardsSnap.docs.map(d => d.data());
-            
             await renderMain();
             showScreen('screen-main');
         } else {
             showScreen('screen-login');
         }
-        preloader.style.display = 'none';
+        document.getElementById('loading-screen').style.display = 'none';
     });
 
     async function renderMain() {
         document.getElementById('user-name').innerText = myData.name;
         
-        // Рендер слайдера карт
+        // Рендер карт
         const container = document.getElementById('cards-container');
         container.innerHTML = '';
-        
         myCards.forEach(card => {
-            const cardEl = document.createElement('div');
-            cardEl.className = 'bank-card';
-            cardEl.style.background = card.color;
-            cardEl.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                    <div style="width: 40px; height: 30px; background: #FFD700; border-radius: 6px; opacity: 0.8;"></div>
-                    <div style="font-weight:bold; font-style: italic;">Bingus</div>
-                </div>
-                <div class="card-balance">${myData.balance.toLocaleString()} ₽</div>
-                <div>
-                    <div class="card-number">**** **** **** ${card.cardNum.slice(-4)}</div>
-                    <div style="display:flex; justify-content: space-between; margin-top:5px; font-size:10px; opacity:0.7;">
-                        <span>${card.expiry}</span>
-                        <span>CVV ***</span>
+            container.innerHTML += `
+                <div class="bank-card" style="background: ${card.color}">
+                    <div style="font-weight: 800; font-style: italic; opacity: 0.9;">BingusBank</div>
+                    <div class="card-balance">${myData.balance.toLocaleString()} ₽</div>
+                    <div>
+                        <div class="card-number">**** **** **** ${card.cardNum.slice(-4)}</div>
+                        <div style="font-size: 10px; margin-top:5px; opacity: 0.8;">VALID THRU ${card.expiry}</div>
                     </div>
                 </div>
             `;
-            container.appendChild(cardEl);
         });
 
-        // Загрузка истории (последние 10 транзакций)
-        const txSnap = await db.collection('users').doc(auth.currentUser.uid).collection('transactions').orderBy('date', 'desc').limit(10).get();
+        // История транзакций
+        const txSnap = await db.collection('users').doc(auth.currentUser.uid).collection('transactions').orderBy('date', 'desc').limit(8).get();
         const txList = document.getElementById('transaction-list');
         if(!txSnap.empty) {
             txList.innerHTML = '';
             txSnap.forEach(doc => {
                 const tx = doc.data();
-                const isPositive = tx.type === 'income';
+                const isIncome = tx.type === 'income';
                 txList.innerHTML += `
-                    <div class="transaction-item">
+                    <div class="tx-item">
                         <div class="tx-info">
                             <b>${tx.title}</b>
-                            <small>${new Date(tx.date).toLocaleDateString()}</small>
+                            <span>${new Date(tx.date).toLocaleDateString()}</span>
                         </div>
-                        <div class="tx-amount ${isPositive ? 'tx-positive' : ''}">
-                            ${isPositive ? '+' : '-'}${tx.amount} ₽
+                        <div class="tx-amount ${isIncome ? 'tx-plus' : ''}">
+                            ${isIncome ? '+' : '-'}${tx.amount} ₽
                         </div>
                     </div>
                 `;
@@ -389,89 +371,31 @@
         }
     }
 
-    // Логика новой карты
-    function openNewCardModal() { document.getElementById('card-modal').style.display = 'flex'; }
+    // Выпуск новой карты
+    function openCardModal() { document.getElementById('card-modal').style.display = 'flex'; }
     function closeCardModal() { document.getElementById('card-modal').style.display = 'none'; }
-
+    
     document.querySelectorAll('.color-opt').forEach(opt => {
         opt.onclick = () => {
             document.querySelectorAll('.color-opt').forEach(o => o.classList.remove('active'));
             opt.classList.add('active');
-            selectedCardColor = opt.dataset.color;
+            selectedCardStyle = opt.dataset.color;
         }
     });
 
     async function issueNewCard() {
         const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
-        const newCard = {
-            cardNum,
-            color: selectedCardColor,
-            expiry: "12/29",
-            cvv: Math.floor(Math.random()*900)+100
-        };
-        await db.collection('users').doc(auth.currentUser.uid).collection('cards').add(newCard);
+        await db.collection('users').doc(auth.currentUser.uid).collection('cards').add({
+            cardNum, color: selectedCardStyle, expiry: "05/31", cvv: Math.floor(Math.random()*900)+100
+        });
         location.reload();
     }
 
-    // Регистрация (с созданием первой карты)
-    async function register() {
-        const name = document.getElementById('reg-name').value;
-        const email = document.getElementById('reg-email').value;
-        const pass = document.getElementById('reg-password').value;
-        
-        if(!name || pass.length < 6) return alert("Проверьте данные");
-        
-        try {
-            const res = await auth.createUserWithEmailAndPassword(email, pass);
-            const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
-            
-            await db.collection('users').doc(res.user.uid).set({
-                uid: res.user.uid, name, email, balance: 1000
-            });
-
-            await db.collection('users').doc(res.user.uid).collection('cards').add({
-                cardNum, color: "linear-gradient(135deg, #FF9000, #FF6B00)", expiry: "01/30", cvv: 777
-            });
-
-            location.reload();
-        } catch (e) { alert(e.message); }
-    }
-
-    async function login() {
-        const email = document.getElementById('login-email').value;
-        const pass = document.getElementById('login-password').value;
-        try { await auth.signInWithEmailAndPassword(email, pass); } catch (e) { alert("Ошибка входа"); }
-    }
-
-    function logout() { auth.signOut(); }
-
-    // Переводы и модалки
-    function requestAuth(taskType) {
-        currentTask = taskType;
-        document.getElementById('auth-modal').style.display = 'flex';
-    }
-
-    function closeModal() { document.getElementById('auth-modal').style.display = 'none'; }
-
-    document.getElementById('modal-confirm-btn').onclick = async () => {
-        const password = document.getElementById('confirm-password').value;
-        const user = auth.currentUser;
-        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
-        try {
-            await user.reauthenticateWithCredential(credential);
-            closeModal();
-            if (currentTask === 'transfer') transferMoney();
-        } catch (e) { alert("Неверный пароль"); }
-    };
-
+    // Логика переводов
     async function findRecipient() {
-        const val = document.getElementById('search-input').value;
-        let snap = await db.collection('users').where('email', '==', val).get();
-        if(snap.empty) {
-            // Поиск по номеру карты в подколлекциях требует индекс или другой подход, 
-            // для простоты ищем по email в этом примере.
-            return alert("Пользователь не найден");
-        }
+        const input = document.getElementById('search-input').value;
+        let snap = await db.collection('users').where('email', '==', input).get();
+        if(snap.empty) return alert("Пользователь не найден");
         targetUser = snap.docs[0].data();
         document.getElementById('recipient-display').innerText = targetUser.name;
         document.getElementById('t-step-1').style.display = 'none';
@@ -489,19 +413,56 @@
         batch.update(myRef, { balance: firebase.firestore.FieldValue.increment(-amount) });
         batch.update(targetRef, { balance: firebase.firestore.FieldValue.increment(amount) });
 
-        // Запись в историю обоим
-        const myTx = myRef.collection('transactions').doc();
-        batch.set(myTx, { title: `Перевод ${targetUser.name}`, amount, type: 'outcome', date: Date.now() });
+        batch.set(myRef.collection('transactions').doc(), { title: `Перевод ${targetUser.name}`, amount, type: 'outcome', date: Date.now() });
+        batch.set(targetRef.collection('transactions').doc(), { title: `Пополнение от ${myData.name}`, amount, type: 'income', date: Date.now() });
 
-        const targetTx = targetRef.collection('transactions').doc();
-        batch.set(targetTx, { title: `Пополнение от ${myData.name}`, amount, type: 'income', date: Date.now() });
-
-        try {
-            await batch.commit();
-            document.getElementById('t-step-2').style.display = 'none';
-            document.getElementById('t-success').style.display = 'block';
-        } catch (e) { alert("Ошибка транзакции"); }
+        await batch.commit();
+        document.getElementById('t-step-2').style.display = 'none';
+        document.getElementById('t-success').style.display = 'block';
     }
+
+    // Стандартные функции
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function requestAuth(task) { currentTask = task; document.getElementById('auth-modal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('auth-modal').style.display = 'none'; }
+
+    document.getElementById('modal-confirm-btn').onclick = async () => {
+        const pass = document.getElementById('confirm-password').value;
+        const cred = firebase.auth.EmailAuthProvider.credential(auth.currentUser.email, pass);
+        try {
+            await auth.currentUser.reauthenticateWithCredential(cred);
+            closeModal();
+            if(currentTask === 'transfer') transferMoney();
+        } catch(e) { alert("Неверный пароль"); }
+    };
+
+    async function register() {
+        const name = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        const pass = document.getElementById('reg-password').value;
+        if(!name || pass.length < 6) return alert("Проверьте данные");
+        try {
+            const res = await auth.createUserWithEmailAndPassword(email, pass);
+            const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
+            await db.collection('users').doc(res.user.uid).set({ uid: res.user.uid, name, email, balance: 1000 });
+            await db.collection('users').doc(res.user.uid).collection('cards').add({
+                cardNum, color: "linear-gradient(135deg, #FF9000, #FF6B00)", expiry: "01/30", cvv: 777
+            });
+            location.reload();
+        } catch(e) { alert(e.message); }
+    }
+
+    async function login() {
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-password').value;
+        try { await auth.signInWithEmailAndPassword(email, pass); } catch(e) { alert("Ошибка входа"); }
+    }
+
+    function logout() { auth.signOut(); }
 </script>
 </body>
 </html>
