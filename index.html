@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Бингусбанк — Твой оранжевый банк</title>
+    <title>Бингусбанк — Твой пёс помощник!</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -115,7 +115,28 @@
         .card-balance { font-size: 30px; font-weight: 800; }
         .card-chip { width: 45px; height: 35px; background: #FFD700; border-radius: 6px; margin-bottom: 10px; opacity: 0.8; }
         .card-info { display: flex; justify-content: space-between; align-items: flex-end; }
+        
+        .card-number-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        
         .card-number { font-family: 'Courier New', monospace; letter-spacing: 2px; font-size: 16px; }
+        
+        .show-card-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
 
         /* Кнопки действий */
         .actions-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
@@ -130,7 +151,6 @@
             cursor: pointer;
         }
 
-        /* Анимация галочки */
         .success-tick {
             font-size: 60px;
             color: #4CAF50;
@@ -158,7 +178,7 @@
         <p>Откроем вам счет за 30 секунд</p>
         <input type="text" id="reg-name" placeholder="Имя Фамилия">
         <input type="email" id="reg-email" placeholder="Email">
-        <input type="password" id="reg-password" placeholder="Придумайте пароль">
+        <input type="password" id="reg-password" placeholder="Придумайте пароль (от 6 симв.)">
         <button class="btn" onclick="register()">Создать аккаунт</button>
         <button class="btn-link" onclick="showScreen('screen-login')">Уже есть счет</button>
     </div>
@@ -172,9 +192,14 @@
         <div class="bank-card">
             <div class="card-chip"></div>
             <div class="card-balance" id="user-balance">0 ₽</div>
-            <div class="card-info">
-                <div class="card-number" id="card-last-digits">**** 0000</div>
-                <div style="font-size: 12px;" id="card-expiry">12/29</div>
+            <div>
+                <div class="card-number-container">
+                    <div class="card-number" id="card-digits">**** **** **** 0000</div>
+                    <button class="show-card-btn" onclick="toggleCardNumber()">👁️</button>
+                </div>
+                <div class="card-info">
+                    <div style="font-size: 12px;" id="card-expiry">12/29</div>
+                </div>
             </div>
         </div>
 
@@ -205,7 +230,6 @@
 </div>
 
 <script>
-    // ТВОИ КЛЮЧИ FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBYAFyV2_WHPWSrL7vgOjvOV8xi7E7tIko",
         authDomain: "bingusbank-589aa.firebaseapp.com",
@@ -222,40 +246,49 @@
 
     let myData = null;
     let targetUser = null;
+    let isCardVisible = false;
 
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    // Регистрация
+    // Показать/скрыть номер карты
+    function toggleCardNumber() {
+        const cardDisplay = document.getElementById('card-digits');
+        isCardVisible = !isCardVisible;
+        
+        if (isCardVisible) {
+            // Форматируем номер по 4 цифры
+            cardDisplay.innerText = myData.cardNum.match(/.{1,4}/g).join(' ');
+        } else {
+            cardDisplay.innerText = "**** **** **** " + myData.cardNum.slice(-4);
+        }
+    }
+
     async function register() {
         const name = document.getElementById('reg-name').value;
         const email = document.getElementById('reg-email').value;
         const pass = document.getElementById('reg-password').value;
 
-        if(!name || !email || pass.length < 6) return alert("Заполните данные корректно");
-
+        if(!name || !email || pass.length < 6) return alert("Заполните данные корректно (пароль от 6 символов)");
         try {
             const res = await auth.createUserWithEmailAndPassword(email, pass);
             const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
-            
             const newUser = {
                 uid: res.user.uid,
                 name: name,
                 email: email,
                 cardNum: cardNum,
-                balance: 1000, // Бонус при регистрации
+                balance: 1000, 
                 expiry: "01/30",
                 cvv: Math.floor(Math.random() * 900) + 100
             };
-
             await db.collection('users').doc(res.user.uid).set(newUser);
             location.reload();
         } catch (e) { alert(e.message); }
     }
 
-    // Вход
     async function login() {
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
@@ -264,7 +297,6 @@
         } catch (e) { alert("Неверный логин или пароль"); }
     }
 
-    // Авто-вход и получение данных
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const doc = await db.collection('users').doc(user.uid).get();
@@ -278,19 +310,17 @@
     function renderMain() {
         document.getElementById('user-name').innerText = myData.name;
         document.getElementById('user-balance').innerText = myData.balance.toLocaleString() + " ₽";
-        document.getElementById('card-last-digits').innerText = "**** " + myData.cardNum.slice(-4);
+        document.getElementById('card-digits').innerText = "**** **** **** " + myData.cardNum.slice(-4);
         document.getElementById('card-expiry').innerText = myData.expiry;
         showScreen('screen-main');
     }
 
-    // Поиск получателя
     async function findRecipient() {
         const input = document.getElementById('search-input').value;
         let snap = await db.collection('users').where('email', '==', input).get();
         if(snap.empty) snap = await db.collection('users').where('cardNum', '==', input).get();
 
         if(snap.empty) return alert("Получатель не найден");
-        
         targetUser = snap.docs[0].data();
         if(targetUser.uid === myData.uid) return alert("Нельзя переводить себе");
 
@@ -299,10 +329,9 @@
         document.getElementById('t-step-2').style.display = 'block';
     }
 
-    // Перевод
     async function transferMoney() {
         const amount = parseInt(document.getElementById('amount-input').value);
-        if(!amount || amount <= 0 || amount > myData.balance) return alert("Недостаточно средств");
+        if(!amount || amount <= 0 || amount > myData.balance) return alert("Недостаточно средств или некорректная сумма");
 
         const batch = db.batch();
         const meRef = db.collection('users').doc(myData.uid);
@@ -315,9 +344,7 @@
             await batch.commit();
             document.getElementById('send-btn').style.display = 'none';
             document.getElementById('tick').style.display = 'block';
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
+            setTimeout(() => { location.reload(); }, 1500);
         } catch (e) { alert("Ошибка сети"); }
     }
 
