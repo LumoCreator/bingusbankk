@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Бингусбанк — Твой пёс помощник!</title>
+    <title>Bingusbank — Твой пёс помощник.</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -20,7 +20,11 @@
             --gray: #9E9E9E;
         }
 
-        * { box-sizing: border-box; transition: all 0.25s ease; font-family: 'Segoe UI', Roboto, sans-serif; }
+        * { 
+            box-sizing: border-box; 
+            transition: all 0.25s ease; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+        }
 
         body {
             background-color: var(--bg);
@@ -114,28 +118,47 @@
 
         .card-balance { font-size: 30px; font-weight: 800; }
         .card-chip { width: 45px; height: 35px; background: #FFD700; border-radius: 6px; margin-bottom: 10px; opacity: 0.8; }
-        .card-info { display: flex; justify-content: space-between; align-items: flex-end; }
         
-        .card-number-container {
+        .card-number-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 5px;
+            justify-content: space-between;
+            margin-bottom: 10px;
         }
-        
-        .card-number { font-family: 'Courier New', monospace; letter-spacing: 2px; font-size: 16px; }
-        
-        .show-card-btn {
-            background: rgba(255,255,255,0.2);
+
+        .card-number { 
+            font-family: 'Courier New', monospace; 
+            letter-spacing: 2px; 
+            font-size: 17px; 
+        }
+
+        .show-data-btn {
+            background: rgba(255, 255, 255, 0.2);
             border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 10px;
             color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .card-info { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-end; 
+        }
+
+        .card-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .card-value {
+            font-size: 14px;
+            font-weight: 600;
         }
 
         /* Кнопки действий */
@@ -165,7 +188,7 @@
 <div class="app-container">
 
     <div id="screen-login" class="screen active">
-        <h2>Бингусбанк 🍊</h2>
+        <h2>BingusBank 🐶</h2>
         <p>Войдите в свой личный кабинет</p>
         <input type="email" id="login-email" placeholder="Email">
         <input type="password" id="login-password" placeholder="Пароль">
@@ -178,7 +201,7 @@
         <p>Откроем вам счет за 30 секунд</p>
         <input type="text" id="reg-name" placeholder="Имя Фамилия">
         <input type="email" id="reg-email" placeholder="Email">
-        <input type="password" id="reg-password" placeholder="Придумайте пароль (от 6 симв.)">
+        <input type="password" id="reg-password" placeholder="Придумайте пароль">
         <button class="btn" onclick="register()">Создать аккаунт</button>
         <button class="btn-link" onclick="showScreen('screen-login')">Уже есть счет</button>
     </div>
@@ -192,13 +215,21 @@
         <div class="bank-card">
             <div class="card-chip"></div>
             <div class="card-balance" id="user-balance">0 ₽</div>
-            <div>
-                <div class="card-number-container">
+            
+            <div class="card-details">
+                <div class="card-number-row">
                     <div class="card-number" id="card-digits">**** **** **** 0000</div>
-                    <button class="show-card-btn" onclick="toggleCardNumber()">👁️</button>
+                    <button class="show-data-btn" id="toggle-btn" onclick="togglePrivacy()">👁️</button>
                 </div>
                 <div class="card-info">
-                    <div style="font-size: 12px;" id="card-expiry">12/29</div>
+                    <div>
+                        <span class="card-label">Valid Thru</span>
+                        <span class="card-value" id="card-expiry">**/**</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="card-label">CVV</span>
+                        <span class="card-value" id="card-cvv">***</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -246,23 +277,31 @@
 
     let myData = null;
     let targetUser = null;
-    let isCardVisible = false;
+    let isPrivate = true;
 
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    // Показать/скрыть номер карты
-    function toggleCardNumber() {
-        const cardDisplay = document.getElementById('card-digits');
-        isCardVisible = !isCardVisible;
-        
-        if (isCardVisible) {
-            // Форматируем номер по 4 цифры
-            cardDisplay.innerText = myData.cardNum.match(/.{1,4}/g).join(' ');
+    // Переключение видимости данных
+    function togglePrivacy() {
+        isPrivate = !isPrivate;
+        const btn = document.getElementById('toggle-btn');
+        const cardDigits = document.getElementById('card-digits');
+        const expiry = document.getElementById('card-expiry');
+        const cvv = document.getElementById('card-cvv');
+
+        if (isPrivate) {
+            cardDigits.innerText = "**** **** **** " + myData.cardNum.slice(-4);
+            expiry.innerText = "**/**";
+            cvv.innerText = "***";
+            btn.innerText = "👁️";
         } else {
-            cardDisplay.innerText = "**** **** **** " + myData.cardNum.slice(-4);
+            cardDigits.innerText = myData.cardNum.match(/.{1,4}/g).join(' ');
+            expiry.innerText = myData.expiry;
+            cvv.innerText = myData.cvv;
+            btn.innerText = "🔒";
         }
     }
 
@@ -271,7 +310,7 @@
         const email = document.getElementById('reg-email').value;
         const pass = document.getElementById('reg-password').value;
 
-        if(!name || !email || pass.length < 6) return alert("Заполните данные корректно (пароль от 6 символов)");
+        if(!name || !email || pass.length < 6) return alert("Заполните данные корректно");
         try {
             const res = await auth.createUserWithEmailAndPassword(email, pass);
             const cardNum = Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
@@ -310,8 +349,14 @@
     function renderMain() {
         document.getElementById('user-name').innerText = myData.name;
         document.getElementById('user-balance').innerText = myData.balance.toLocaleString() + " ₽";
+        
+        // Сбрасываем в приватный режим при загрузке
+        isPrivate = true;
         document.getElementById('card-digits').innerText = "**** **** **** " + myData.cardNum.slice(-4);
-        document.getElementById('card-expiry').innerText = myData.expiry;
+        document.getElementById('card-expiry').innerText = "**/**";
+        document.getElementById('card-cvv').innerText = "***";
+        document.getElementById('toggle-btn').innerText = "👁️";
+        
         showScreen('screen-main');
     }
 
@@ -331,7 +376,7 @@
 
     async function transferMoney() {
         const amount = parseInt(document.getElementById('amount-input').value);
-        if(!amount || amount <= 0 || amount > myData.balance) return alert("Недостаточно средств или некорректная сумма");
+        if(!amount || amount <= 0 || amount > myData.balance) return alert("Недостаточно средств");
 
         const batch = db.batch();
         const meRef = db.collection('users').doc(myData.uid);
@@ -344,7 +389,9 @@
             await batch.commit();
             document.getElementById('send-btn').style.display = 'none';
             document.getElementById('tick').style.display = 'block';
-            setTimeout(() => { location.reload(); }, 1500);
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
         } catch (e) { alert("Ошибка сети"); }
     }
 
