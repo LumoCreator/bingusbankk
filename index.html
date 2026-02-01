@@ -41,7 +41,6 @@
             display: flex; flex-direction: column;
         }
 
-        /* ИСПРАВЛЕННАЯ ЦЕНТРОВКА ЗАГРУЗКИ */
         #loading-screen { 
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -65,6 +64,7 @@
             display: none; flex-direction: column; 
             width: 100%; height: 100%; position: absolute; background: var(--bg);
             top: 0; left: 0;
+            overflow-y: auto; /* Добавлена прокрутка для всех экранов при переполнении */
         }
         .screen.active { display: flex; animation: slideUp 0.4s ease-out; }
 
@@ -72,7 +72,7 @@
 
         .header { 
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 20px; background: var(--bg); flex-shrink: 0;
+            padding: 10px 20px; background: var(--bg); flex-shrink: 0;
         }
         
         .logout-btn {
@@ -87,32 +87,40 @@
         }
         .cards-wrapper::-webkit-scrollbar { display: none; }
 
+        /* ИСПРАВЛЕННЫЙ РАЗМЕР КАРТ (стандартный формат) */
         .bank-card {
-            min-width: calc(100% - 20px); scroll-snap-align: center;
-            height: 200px; border-radius: 28px; padding: 25px;
+            min-width: 280px; 
+            width: 85%;
+            max-width: 320px;
+            scroll-snap-align: center;
+            aspect-ratio: 1.58 / 1; /* Золотой стандарт банковской карты */
+            border-radius: 20px; padding: 20px;
             color: white; display: flex; flex-direction: column;
-            justify-content: space-between; box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+            justify-content: space-between; box-shadow: 0 10px 20px rgba(0,0,0,0.12);
             position: relative; cursor: pointer; overflow: hidden;
+            margin: 0 auto;
         }
         .bank-card:active { transform: scale(0.97); }
 
         .history-section {
-            background: var(--white); border-radius: 35px 35px 0 0;
-            padding: 25px; flex-grow: 1; overflow-y: auto;
+            background: var(--white); border-radius: 30px 30px 0 0;
+            padding: 20px; flex-grow: 1; 
             box-shadow: 0 -5px 20px rgba(0,0,0,0.03);
+            margin-top: 10px;
         }
 
         input {
-            width: 100%; padding: 18px; margin-bottom: 12px; 
-            border-radius: 18px; border: 1px solid #ddd;
-            font-size: 16px; outline: none;
+            width: 100%; padding: 16px; margin-bottom: 12px; 
+            border-radius: 15px; border: 1px solid #ddd;
+            font-size: 16px; outline: none; background: #fff;
         }
 
         .btn { 
-            width: 100%; padding: 18px; background: var(--primary); 
-            color: white; border: none; border-radius: 22px; 
+            width: 100%; padding: 16px; background: var(--primary); 
+            color: white; border: none; border-radius: 18px; 
             font-size: 17px; font-weight: 700; cursor: pointer;
             display: flex; justify-content: center; align-items: center; gap: 10px;
+            flex-shrink: 0;
         }
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -122,11 +130,11 @@
         }
 
         .apple-success {
-            width: 100px; height: 100px; border-radius: 50%;
+            width: 90px; height: 90px; border-radius: 50%;
             background: var(--primary); display: flex; align-items: center; justify-content: center;
-            margin: 40px auto; animation: successPop 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49);
+            margin: 30px auto; animation: successPop 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49);
         }
-        .apple-success::before { content: '✓'; color: white; font-size: 50px; font-weight: bold; }
+        .apple-success::before { content: '✓'; color: white; font-size: 45px; font-weight: bold; }
         @keyframes successPop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
 
         .modal {
@@ -136,10 +144,11 @@
         }
 
         .select-card-item {
-            background: #f9f9f9; padding: 15px; border-radius: 15px;
-            margin-bottom: 10px; cursor: pointer; border: 2px solid transparent;
+            background: #fdfdfd; padding: 12px; border-radius: 12px;
+            margin-bottom: 8px; cursor: pointer; border: 1px solid #eee;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .select-card-item.selected { border-color: var(--primary); background: #fff4ed; }
+        .select-card-item.selected { border-color: var(--primary); background: #fff4ed; box-shadow: 0 2px 8px rgba(255,107,0,0.1); }
     </style>
 </head>
 <body>
@@ -151,7 +160,7 @@
 <div class="app-container">
 
     <div id="screen-login" class="screen">
-        <h1 style="margin-top:80px;">Войти</h1>
+        <h1 style="margin-top:60px;">Войти</h1>
         <input type="email" id="login-email" placeholder="Email">
         <input type="password" id="login-password" placeholder="Пароль">
         <button class="btn" id="btn-login-action" onclick="login()">Войти</button>
@@ -159,7 +168,7 @@
     </div>
 
     <div id="screen-reg" class="screen">
-        <h1 style="margin-top:60px;">Регистрация</h1>
+        <h1 style="margin-top:40px;">Регистрация</h1>
         <input type="text" id="reg-name" placeholder="Имя Фамилия">
         <input type="email" id="reg-email" placeholder="Email">
         <input type="password" id="reg-password" placeholder="Пароль (6+ знаков)">
@@ -167,7 +176,7 @@
         <p onclick="showScreen('screen-login')" style="text-align:center; cursor:pointer; margin-top:20px;">Назад</p>
     </div>
 
-    <div id="screen-main" class="screen">
+    <div id="screen-main" class="screen" style="padding: 10px 0 0 0;">
         <div class="header">
             <div>
                 <div id="user-name" style="font-weight: 800; font-size: 20px;">...</div>
@@ -178,20 +187,20 @@
 
         <div class="cards-wrapper" id="cards-container"></div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 20px; margin-bottom: 10px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 20px; margin-bottom: 15px;">
             <button class="btn" onclick="showScreen('screen-payments-hub')" style="background: #1C1C1E;">Платежи</button>
             <button class="btn" onclick="openCardModal()" style="background: white; color: black; border: 1px solid #ddd;">+ Карта</button>
         </div>
 
         <div class="history-section">
-            <h3 style="margin-top: 0;">История</h3>
+            <h3 style="margin: 0 0 15px 0;">История</h3>
             <div id="main-tx-list"></div>
         </div>
     </div>
 
     <div id="screen-payments-hub" class="screen">
         <div onclick="showScreen('screen-main')" style="cursor:pointer; font-weight:700;">✕ Закрыть</div>
-        <h2 style="margin: 30px 0;">Платежи</h2>
+        <h2 style="margin: 25px 0;">Платежи</h2>
         <div style="display: flex; flex-direction: column; gap: 12px;">
             <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd; justify-content: space-between;" onclick="showScreen('screen-transfer-menu')">
                 <span>💸 Перевод</span> <span>→</span>
@@ -204,7 +213,7 @@
 
     <div id="screen-transfer-menu" class="screen">
         <div onclick="showScreen('screen-payments-hub')" style="cursor:pointer; font-weight:700;">← Назад</div>
-        <h2 style="margin: 30px 0;">Куда перевести?</h2>
+        <h2 style="margin: 25px 0;">Куда перевести?</h2>
         <div style="display: flex; flex-direction: column; gap: 12px;">
             <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd;" onclick="showScreen('screen-transfer-choice')">Человеку (По почте/карте)</button>
             <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd;" onclick="openSelfTransfer()">Между своими счетами</button>
@@ -213,18 +222,25 @@
 
     <div id="screen-self-transfer" class="screen">
         <div onclick="showScreen('screen-transfer-menu')" style="cursor:pointer; font-weight:700;">← Назад</div>
-        <h2>Между своими</h2>
-        <p style="color:var(--gray); margin-bottom:5px;">Откуда:</p>
-        <div id="self-from-list"></div>
-        <p style="color:var(--gray); margin-bottom:5px;">Куда:</p>
-        <div id="self-to-list"></div>
-        <input type="number" id="self-amount" placeholder="Сумма ₽">
-        <button class="btn" id="btn-self-action" onclick="executeSelfTransfer()">Перевести</button>
+        <h2 style="margin-bottom: 10px;">Между своими</h2>
+        
+        <div style="flex-grow: 1;">
+            <p style="color:var(--gray); margin: 10px 0 5px 0;">Откуда:</p>
+            <div id="self-from-list"></div>
+            
+            <p style="color:var(--gray); margin: 15px 0 5px 0;">Куда:</p>
+            <div id="self-to-list"></div>
+            
+            <p style="color:var(--gray); margin: 15px 0 5px 0;">Сумма перевода:</p>
+            <input type="number" id="self-amount" placeholder="Сумма ₽">
+        </div>
+        
+        <button class="btn" id="btn-self-action" onclick="executeSelfTransfer()" style="margin-top: 20px;">Перевести</button>
     </div>
 
     <div id="screen-transfer-choice" class="screen">
         <div onclick="showScreen('screen-transfer-menu')" style="cursor:pointer; font-weight:700;">← Назад</div>
-        <h2 style="margin: 30px 0;">Способ перевода</h2>
+        <h2 style="margin: 25px 0;">Способ перевода</h2>
         <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd; margin-bottom:10px;" onclick="openTransfer('email')">📧 По электронной почте</button>
         <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd;" onclick="openTransfer('card')">💳 По номеру карты</button>
     </div>
@@ -253,7 +269,7 @@
 
     <div id="screen-card-detail" class="screen">
         <div onclick="showScreen('screen-main')" style="cursor:pointer; font-weight:700;">✕ Закрыть</div>
-        <div id="detail-card-visual" style="margin: 20px 0;"></div>
+        <div id="detail-card-visual" style="margin: 20px 0; display: flex; justify-content: center;"></div>
         <button class="btn" id="btn-toggle-block" onclick="toggleBlockCard()" style="margin-bottom: 10px;"></button>
         <div class="history-section">
             <h3 id="card-detail-title">История карты</h3>
@@ -294,7 +310,6 @@
     let myData = null, myCards = [], transferType = 'email', selectedColor = 'linear-gradient(135deg, #FF9000, #FF6B00)', targetUser = null;
     let selfFrom = null, selfTo = null;
 
-    // ИСПРАВЛЕННЫЙ СЛУШАТЕЛЬ (Убирает бесконечную загрузку)
     auth.onAuthStateChanged(async (user) => {
         const loader = document.getElementById('loading-screen');
         if (user) {
@@ -308,7 +323,6 @@
                 showScreen('screen-main');
                 loader.style.display = 'none';
             } catch(e) {
-                console.error("Data error", e);
                 loader.style.display = 'none';
                 showScreen('screen-login');
             }
@@ -321,7 +335,10 @@
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         const target = document.getElementById(id);
-        if(target) target.classList.add('active');
+        if(target) {
+            target.classList.add('active');
+            target.scrollTop = 0; // Сброс прокрутки при открытии
+        }
     }
 
     function renderMain() {
@@ -333,8 +350,8 @@
             container.innerHTML += `
                 <div class="bank-card" style="background:${card.color}; opacity:${card.blocked?0.6:1}" onclick="openCardDetails('${card.id}')">
                     <div style="font-weight:900; font-size:14px; opacity:0.8;">BINGUS PREMIUM</div>
-                    <div style="font-size:28px; font-weight:800;">${myData.balance.toLocaleString()} ₽</div>
-                    <div style="font-family:monospace; letter-spacing:2px;">•••• ${card.cardNum.slice(-4)}</div>
+                    <div style="font-size:24px; font-weight:800;">${myData.balance.toLocaleString()} ₽</div>
+                    <div style="font-family:monospace; letter-spacing:2px; font-size: 16px;">•••• ${card.cardNum.slice(-4)}</div>
                 </div>
             `;
         });
@@ -342,7 +359,6 @@
           .then(snap => renderTxList(snap, 'main-tx-list'));
     }
 
-    // ЛОГИКА ПЕРЕВОДОВ
     function openTransfer(type) {
         transferType = type;
         const input = document.getElementById('transfer-input');
@@ -417,7 +433,7 @@
             myCards.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'select-card-item';
-                div.innerHTML = `💳 •••• ${c.cardNum.slice(-4)}`;
+                div.innerHTML = `<span>💳 •••• ${c.cardNum.slice(-4)}</span> <small style="color:var(--gray)">Активна</small>`;
                 div.onclick = () => {
                     document.querySelectorAll(`#${id} .select-card-item`).forEach(i => i.classList.remove('selected'));
                     div.classList.add('selected');
@@ -435,14 +451,28 @@
         const amount = parseInt(document.getElementById('self-amount').value);
         if(!selfFrom || !selfTo || selfFrom.id === selfTo.id) return alert("Выберите разные карты");
         if(!amount || amount <= 0) return alert("Введите сумму");
+        if(amount > myData.balance) return alert("Недостаточно средств на счете");
         
         const btn = document.getElementById('btn-self-action');
         btn.disabled = true; btn.innerHTML = '<div class="btn-loader"></div>';
 
-        await db.collection('users').doc(auth.currentUser.uid).collection('transactions').add({ 
-            amount, date: Date.now(), title: `Перевод между картами`, type: 'transfer', cardId: selfFrom.id 
-        });
-        location.reload();
+        // При общем балансе мы просто записываем транзакцию. 
+        // Если бы балансы были разные, тут был бы batch.update
+        try {
+            await db.collection('users').doc(auth.currentUser.uid).collection('transactions').add({ 
+                amount, 
+                date: Date.now(), 
+                title: `Между своими картами`, 
+                type: 'transfer', 
+                cardId: selfFrom.id,
+                details: `С карты ${selfFrom.cardNum.slice(-4)} на ${selfTo.cardNum.slice(-4)}`
+            });
+            alert("Перевод успешно выполнен");
+            location.reload();
+        } catch(e) {
+            alert("Ошибка перевода");
+            btn.disabled = false; btn.innerText = "Перевести";
+        }
     }
 
     function renderTxList(snap, containerId) {
@@ -451,8 +481,8 @@
         snap.forEach(doc => {
             const tx = doc.data();
             list.innerHTML += `
-                <div style="display:flex; justify-content:space-between; padding:15px 0; border-bottom:1px solid #eee;">
-                    <div><div style="font-weight:700;">${tx.title}</div><small style="color:#999">${new Date(tx.date).toLocaleDateString()}</small></div>
+                <div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #f2f2f2;">
+                    <div><div style="font-weight:700; font-size:15px;">${tx.title}</div><small style="color:#999">${new Date(tx.date).toLocaleDateString()}</small></div>
                     <div style="color:${tx.type==='income'?'var(--success)':'var(--text)'}; font-weight:800">
                         ${tx.type==='income'?'+':''}${tx.amount.toLocaleString()} ₽
                     </div>
@@ -464,14 +494,22 @@
         let card = myCards.find(c => c.id === id);
         showScreen('screen-card-detail');
         document.getElementById('detail-card-visual').innerHTML = `
-            <div class="bank-card" style="background:${card.color}; min-width:100%; cursor:default;">
-                <div style="font-weight:900;">BINGUS PREMIUM</div>
-                <div style="font-size:32px; font-weight:800;">${myData.balance.toLocaleString()} ₽</div>
-                <div style="font-family:monospace; font-size:18px;">${card.cardNum.match(/.{1,4}/g).join(' ')}</div>
+            <div class="bank-card" style="background:${card.color}; cursor:default; margin: 0 auto;">
+                <div style="font-weight:900; font-size:14px;">BINGUS PREMIUM</div>
+                <div style="font-size:24px; font-weight:800;">${myData.balance.toLocaleString()} ₽</div>
+                <div style="font-family:monospace; font-size:16px;">${card.cardNum.match(/.{1,4}/g).join(' ')}</div>
             </div>`;
         const btn = document.getElementById('btn-toggle-block');
         btn.innerText = card.blocked ? "Разблокировать" : "Заблокировать";
         btn.style.background = card.blocked ? "var(--success)" : "var(--danger)";
+        
+        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('transactions').where('cardId','==',id).get();
+        renderTxList(snap, 'card-tx-list');
+    }
+
+    async function toggleBlockCard() {
+        if(!currentCardId) return;
+        // Логика блокировки...
     }
 
     async function issueCard() {
