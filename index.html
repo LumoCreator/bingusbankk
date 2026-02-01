@@ -36,13 +36,13 @@
             color: var(--text);
         }
 
-        /* Центрированный лоадер */
         #loading-screen { 
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            position: fixed; inset: 0;
             background: var(--white); 
             display: flex; justify-content: center; align-items: center; 
             z-index: 9999;
         }
+        
         .loader-ring {
             width: 60px; height: 60px;
             border: 5px solid #f3f3f3;
@@ -50,6 +50,16 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
+        
+        /* Лоадер для кнопок */
+        .btn-loader {
+            width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .app-container { 
@@ -71,7 +81,6 @@
             to { opacity: 1; transform: translateY(0); } 
         }
 
-        /* Шапка */
         .header { 
             display: flex; justify-content: space-between; align-items: center; 
             padding: 10px 20px; background: var(--bg); flex-shrink: 0;
@@ -84,7 +93,6 @@
             font-weight: 600; cursor: pointer;
         }
 
-        /* Слайдер карт */
         .cards-wrapper {
             padding: 10px 20px 25px 20px;
             display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
@@ -110,13 +118,11 @@
             margin-top: 10px;
         }
 
-        /* Поля ввода и кнопки */
         input {
             width: 100%; padding: 18px; margin-bottom: 12px; 
             border-radius: 18px; border: 1px solid #ddd;
             font-size: 16px; outline: none; background: #fff;
         }
-        input:focus { border-color: var(--primary); }
 
         .btn { 
             width: 100%; padding: 18px; background: var(--primary); 
@@ -125,9 +131,8 @@
             display: flex; justify-content: center; align-items: center; gap: 10px;
             flex-shrink: 0;
         }
-        .btn:active { transform: scale(0.98); opacity: 0.9; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
-        /* Список выбора карт */
         .select-card-item {
             background: #fff; padding: 15px; border-radius: 16px;
             margin-bottom: 10px; cursor: pointer; border: 2px solid transparent;
@@ -161,7 +166,9 @@
         <p style="color: var(--gray); margin-bottom: 30px;">Добро пожаловать в BingusBank</p>
         <input type="email" id="login-email" placeholder="Email">
         <input type="password" id="login-password" placeholder="Пароль">
-        <button class="btn" onclick="login()">Войти в систему</button>
+        <button class="btn" id="btn-login" onclick="login()">
+            <span class="btn-text">Войти в систему</span>
+        </button>
         <p onclick="showScreen('screen-reg')" style="text-align:center; color:var(--primary); font-weight:600; cursor:pointer; margin-top:25px;">Создать новый аккаунт</p>
     </div>
 
@@ -169,27 +176,24 @@
         <h1 style="margin-top:60px;">Регистрация</h1>
         <input type="text" id="reg-name" placeholder="Имя Фамилия">
         <input type="email" id="reg-email" placeholder="Email">
-        <input type="password" id="reg-password" placeholder="Пароль (6+ символов)">
-        <button class="btn" onclick="register()">Открыть счет</button>
-        <p onclick="showScreen('screen-login')" style="text-align:center; cursor:pointer; margin-top:20px;">Уже есть аккаунт? Войти</p>
+        <input type="password" id="reg-password" placeholder="Пароль">
+        <button class="btn" id="btn-reg" onclick="register()">Открыть счет</button>
+        <p onclick="showScreen('screen-login')" style="text-align:center; cursor:pointer; margin-top:20px;">Назад</p>
     </div>
 
     <div id="screen-main" class="screen" style="padding: 10px 0 0 0;">
         <div class="header">
             <div>
                 <div id="user-name" style="font-weight: 800; font-size: 22px;">...</div>
-                <div id="total-balance" style="font-size: 13px; color: var(--gray);">Загрузка баланса...</div>
+                <div id="total-balance" style="font-size: 13px; color: var(--gray);">Загрузка...</div>
             </div>
             <div class="logout-btn" onclick="logout()">Выход</div>
         </div>
-
         <div class="cards-wrapper" id="cards-container"></div>
-        
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; margin-bottom: 15px;">
             <button class="btn" onclick="showScreen('screen-payments-hub')" style="background: #1C1C1E;">Платежи</button>
             <button class="btn" onclick="openCardModal()" style="background: white; color: black; border: 1px solid #ddd;">+ Карта</button>
         </div>
-
         <div class="history-section">
             <h3 style="margin: 0 0 15px 0;">История транзакций</h3>
             <div id="main-tx-list"></div>
@@ -198,77 +202,64 @@
 
     <div id="screen-payments-hub" class="screen">
         <div onclick="showScreen('screen-main')" style="cursor:pointer; font-weight:700;">✕ Закрыть</div>
-        <h2 style="margin: 30px 0;">Платежи и переводы</h2>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-            <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd; justify-content: space-between;" onclick="showScreen('screen-transfer-menu')">
-                <span>💸 Переводы</span> <span>→</span>
-            </button>
-            <button class="btn" style="background:#f9f9f9; color:var(--gray); border:1px solid #eee; justify-content: space-between; cursor:default;">
-                <span>📱 Оплата услуг</span> <span>скоро</span>
-            </button>
-        </div>
+        <h2 style="margin: 30px 0;">Платежи</h2>
+        <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd; justify-content: space-between;" onclick="showScreen('screen-transfer-menu')">
+            <span>💸 Переводы</span> <span>→</span>
+        </button>
     </div>
 
     <div id="screen-transfer-menu" class="screen">
         <div onclick="showScreen('screen-payments-hub')" style="cursor:pointer; font-weight:700;">← Назад</div>
         <h2 style="margin: 25px 0;">Куда отправим?</h2>
-        <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd; margin-bottom:12px;" onclick="openTransfer('email')">📧 По электронной почте</button>
+        <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd; margin-bottom:12px;" onclick="openTransfer('email')">📧 По Email</button>
         <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd; margin-bottom:12px;" onclick="openTransfer('card')">💳 По номеру карты</button>
-        <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd;" onclick="openSelfTransfer()">🔄 Между своими счетами</button>
+        <button class="btn" style="background:white; color:var(--text); border:1px solid #ddd;" onclick="openSelfTransfer()">🔄 Между счетами</button>
     </div>
 
     <div id="screen-transfer" class="screen">
         <div onclick="showScreen('screen-transfer-menu')" style="cursor:pointer; font-weight:700;">← Назад</div>
         <h2 id="transfer-title">Перевод</h2>
-        
         <div id="t-step-1">
-            <p style="color:var(--gray);">Введите данные получателя:</p>
             <input type="text" id="transfer-input" placeholder="...">
-            <button class="btn" onclick="findRecipient()">Найти получателя</button>
+            <button class="btn" id="btn-find" onclick="findRecipient()">Далее</button>
         </div>
-
         <div id="t-step-2" style="display:none;">
-            <p style="color:var(--gray);">С какой карты списать?</p>
-            <div id="transfer-from-cards" style="margin-bottom: 20px;"></div>
-            
-            <div style="background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; text-align: center;">
-                <p style="color: var(--gray); margin: 0;">Получатель</p>
-                <h3 id="recipient-display" style="margin: 5px 0 0 0;">...</h3>
+            <p style="color:var(--gray);">С какой карты?</p>
+            <div id="transfer-from-cards"></div>
+            <div style="background: white; padding: 20px; border-radius: 20px; margin: 20px 0; text-align: center;">
+                <p style="color: var(--gray); margin: 0;">Получатель: <b id="recipient-display" style="color:var(--text)"></b></p>
             </div>
-
             <input type="number" id="amount-input" placeholder="Сумма ₽">
-            <button class="btn" onclick="executeTransfer()">Отправить деньги</button>
+            <button class="btn" id="btn-exec-transfer" onclick="executeTransfer()">Отправить</button>
         </div>
-
         <div id="t-success" style="display:none; text-align: center;">
             <div class="apple-success"></div>
-            <h2>Деньги отправлены!</h2>
-            <button class="btn" onclick="location.reload()">Вернуться на главную</button>
+            <h2>Готово!</h2>
+            <button class="btn" onclick="location.reload()">На главную</button>
         </div>
     </div>
 
     <div id="screen-self-transfer" class="screen">
         <div onclick="showScreen('screen-transfer-menu')" style="cursor:pointer; font-weight:700;">← Назад</div>
-        <h2>Перевод между счетами</h2>
-        
-        <div style="flex-grow: 1;">
-            <p style="color:var(--gray); margin: 15px 0 5px 0;">Откуда:</p>
-            <div id="self-from-list"></div>
-            
-            <p style="color:var(--gray); margin: 20px 0 5px 0;">Куда:</p>
-            <div id="self-to-list"></div>
-            
-            <input type="number" id="self-amount" placeholder="Сумма ₽" style="margin-top: 20px;">
-        </div>
-        
-        <button class="btn" onclick="executeSelfTransfer()" style="margin-top: 20px;">Перевести</button>
+        <h2>Между своими</h2>
+        <p style="color:var(--gray);">Откуда:</p>
+        <div id="self-from-list"></div>
+        <p style="color:var(--gray); margin-top:15px;">Куда:</p>
+        <div id="self-to-list"></div>
+        <input type="number" id="self-amount" placeholder="Сумма ₽" style="margin-top: 15px;">
+        <button class="btn" id="btn-self-transfer" onclick="executeSelfTransfer()">Перевести</button>
     </div>
 
     <div id="screen-card-detail" class="screen">
         <div onclick="showScreen('screen-main')" style="cursor:pointer; font-weight:700;">✕ Закрыть</div>
         <div id="detail-card-visual" style="margin: 25px 0;"></div>
+        
+        <button class="btn" id="btn-block-card" style="margin-bottom: 20px;" onclick="toggleBlockCard()">
+            Загрузка...
+        </button>
+
         <div class="history-section">
-            <h3 id="card-detail-title">История по этой карте</h3>
+            <h3>История по карте</h3>
             <div id="card-tx-list"></div>
         </div>
     </div>
@@ -277,14 +268,13 @@
 
 <div id="card-modal" class="modal">
     <div style="background:white; padding:35px; border-radius:30px; width:90%; max-width:380px; text-align:center;">
-        <h3 style="margin-top:0;">Выпуск новой карты</h3>
-        <p style="color:var(--gray); font-size: 14px;">Выберите дизайн вашей карты</p>
+        <h3>Новая карта</h3>
         <div style="display:flex; gap:15px; justify-content:center; margin:25px 0;">
-            <div onclick="setNewColor('linear-gradient(135deg, #FF9000, #FF6B00)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #FF9000, #FF6B00); cursor:pointer; border: 2px solid #eee;"></div>
-            <div onclick="setNewColor('linear-gradient(135deg, #1C1C1E, #444)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #1C1C1E, #444); cursor:pointer; border: 2px solid #eee;"></div>
-            <div onclick="setNewColor('linear-gradient(135deg, #34C759, #1E8E3E)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #34C759, #1E8E3E); cursor:pointer; border: 2px solid #eee;"></div>
+            <div onclick="setNewColor('linear-gradient(135deg, #FF9000, #FF6B00)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #FF9000, #FF6B00); cursor:pointer;"></div>
+            <div onclick="setNewColor('linear-gradient(135deg, #1C1C1E, #444)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #1C1C1E, #444); cursor:pointer;"></div>
+            <div onclick="setNewColor('linear-gradient(135deg, #34C759, #1E8E3E)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #34C759, #1E8E3E); cursor:pointer;"></div>
         </div>
-        <button class="btn" onclick="issueCard()">Заказать карту (0 ₽)</button>
+        <button class="btn" id="btn-issue" onclick="issueCard()">Создать (0 ₽)</button>
         <p onclick="closeCardModal()" style="margin-top:20px; cursor:pointer; color:var(--gray)">Отмена</p>
     </div>
 </div>
@@ -304,10 +294,10 @@
     const db = firebase.firestore();
 
     let myData = null, myCards = [], selectedColor = 'linear-gradient(135deg, #FF9000, #FF6B00)';
-    let transferType = '', targetUser = null, targetCard = null, selectedCardFrom = null;
+    let transferType = '', targetUser = null, targetCard = null, selectedCardFrom = null, currentCardId = null;
     let selfFrom = null, selfTo = null;
 
-    // Маска для ввода карты (пробел каждые 4 цифры)
+    // Маска ввода
     document.getElementById('transfer-input').addEventListener('input', function (e) {
         if (transferType === 'card') {
             let v = e.target.value.replace(/\D/g, '').substring(0, 16);
@@ -315,22 +305,29 @@
         }
     });
 
+    // Красивый лоадер для кнопок
+    function setBtnLoading(btnId, isLoading, originalText) {
+        const btn = document.getElementById(btnId);
+        if (isLoading) {
+            btn.disabled = true;
+            btn.innerHTML = '<div class="btn-loader"></div>';
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
     auth.onAuthStateChanged(async (user) => {
-        const loader = document.getElementById('loading-screen');
         if (user) {
-            try {
-                const userRef = db.collection('users').doc(user.uid);
-                const doc = await userRef.get();
-                myData = doc.data();
-                
-                const cardsSnap = await userRef.collection('cards').get();
-                myCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                
-                renderMain();
-                showScreen('screen-main');
-            } catch(e) { showScreen('screen-login'); }
+            const userRef = db.collection('users').doc(user.uid);
+            const doc = await userRef.get();
+            myData = doc.data();
+            const cardsSnap = await userRef.collection('cards').get();
+            myCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            renderMain();
+            showScreen('screen-main');
         } else { showScreen('screen-login'); }
-        loader.style.display = 'none';
+        document.getElementById('loading-screen').style.display = 'none';
     });
 
     function renderMain() {
@@ -339,46 +336,53 @@
         const container = document.getElementById('cards-container');
         container.innerHTML = '';
         let total = 0;
-        
         myCards.forEach(card => {
-            const balance = card.balance || 0;
-            total += balance;
+            total += (card.balance || 0);
             container.innerHTML += `
-                <div class="bank-card" style="background:${card.color}" onclick="openCardDetails('${card.id}')">
+                <div class="bank-card" style="background:${card.color}; opacity:${card.blocked ? 0.6 : 1}" onclick="openCardDetails('${card.id}')">
                     <div style="font-weight:900; font-size:12px; opacity:0.7;">BINGUS PREMIUM</div>
-                    <div style="font-size:26px; font-weight:800;">${balance.toLocaleString()} ₽</div>
-                    <div style="font-family:monospace; letter-spacing:2px; font-size:16px;">•••• ${card.cardNum.slice(-4)}</div>
+                    <div style="font-size:24px; font-weight:800;">${(card.balance || 0).toLocaleString()} ₽</div>
+                    <div style="font-family:monospace; letter-spacing:2px;">•••• ${card.cardNum.slice(-4)}</div>
                 </div>`;
         });
         document.getElementById('total-balance').innerText = `Общий баланс: ${total.toLocaleString()} ₽`;
-        
-        db.collection('users').doc(auth.currentUser.uid).collection('transactions')
-          .orderBy('date','desc').limit(15).get()
+        db.collection('users').doc(auth.currentUser.uid).collection('transactions').orderBy('date','desc').limit(10).get()
           .then(snap => renderTxList(snap, 'main-tx-list'));
+    }
+
+    async function login() {
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-password').value;
+        if(!email || !pass) return alert("Заполните поля");
+        
+        setBtnLoading('btn-login', true, '');
+        try { 
+            await auth.signInWithEmailAndPassword(email, pass); 
+        } catch(e) { 
+            alert("Ошибка входа"); 
+            setBtnLoading('btn-login', false, 'Войти в систему');
+        }
     }
 
     function openTransfer(type) {
         transferType = type;
-        const input = document.getElementById('transfer-input');
-        input.value = '';
-        input.placeholder = type === 'email' ? "Email получателя" : "0000 0000 0000 0000";
-        document.getElementById('transfer-title').innerText = type === 'email' ? "Перевод по Email" : "Перевод по карте";
         document.getElementById('t-step-1').style.display = 'block';
         document.getElementById('t-step-2').style.display = 'none';
+        document.getElementById('transfer-input').value = '';
         showScreen('screen-transfer');
     }
 
     async function findRecipient() {
         let val = document.getElementById('transfer-input').value.replace(/\s/g, '').toLowerCase();
         if(!val) return;
-
+        setBtnLoading('btn-find', true, '');
+        
         try {
             let snap;
             if (transferType === 'email') {
                 snap = await db.collection('users').where('email', '==', val).get();
                 if(!snap.empty) {
                     targetUser = { uid: snap.docs[0].id, ...snap.docs[0].data() };
-                    // Для перевода по email берем первую попавшуюся карту получателя
                     const tCards = await db.collection('users').doc(targetUser.uid).collection('cards').limit(1).get();
                     targetCard = { id: tCards.docs[0].id, ref: tCards.docs[0].ref };
                 }
@@ -390,56 +394,40 @@
                     targetUser = { uid: userDoc.id, ...userDoc.data() };
                 }
             }
-
-            if(!targetUser) return alert("Получатель не найден");
-            
+            if(!targetUser) throw "Не найден";
             document.getElementById('recipient-display').innerText = targetUser.name;
-            renderCardSelection('transfer-from-cards', (card) => selectedCardFrom = card);
-            
+            renderCardSelection('transfer-from-cards', (c) => selectedCardFrom = c);
             document.getElementById('t-step-1').style.display = 'none';
             document.getElementById('t-step-2').style.display = 'block';
-        } catch(e) { alert("Ошибка при поиске"); }
-    }
-
-    function renderCardSelection(containerId, onSelect) {
-        const list = document.getElementById(containerId);
-        list.innerHTML = '';
-        myCards.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'select-card-item';
-            div.innerHTML = `<span>💳 •••• ${c.cardNum.slice(-4)}</span> <b>${(c.balance || 0).toLocaleString()} ₽</b>`;
-            div.onclick = () => {
-                document.querySelectorAll(`#${containerId} .select-card-item`).forEach(i => i.classList.remove('selected'));
-                div.classList.add('selected');
-                onSelect(c);
-            };
-            list.appendChild(div);
-        });
+        } catch(e) { alert("Не найдено"); }
+        setBtnLoading('btn-find', false, 'Далее');
     }
 
     async function executeTransfer() {
         const amount = parseInt(document.getElementById('amount-input').value);
-        if(!selectedCardFrom || !amount || amount <= 0) return alert("Выберите карту и введите сумму");
-        if(selectedCardFrom.balance < amount) return alert("Недостаточно средств на выбранной карте");
+        if(!selectedCardFrom || !amount || amount <= 0) return alert("Ошибка данных");
+        if(selectedCardFrom.balance < amount) return alert("Недостаточно средств");
 
-        const batch = db.batch();
-        const fromRef = db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selectedCardFrom.id);
-        const toRef = targetCard.ref;
-
-        batch.update(fromRef, { balance: firebase.firestore.FieldValue.increment(-amount) });
-        batch.update(toRef, { balance: firebase.firestore.FieldValue.increment(amount) });
-
-        const tx = { amount, date: Date.now(), title: `Перевод ${targetUser.name}`, type: 'outcome', cardId: selectedCardFrom.id };
-        batch.set(db.collection('users').doc(auth.currentUser.uid).collection('transactions').doc(), tx);
-        batch.set(db.collection('users').doc(targetUser.uid).collection('transactions').doc(), { ...tx, title: `От ${myData.name}`, type: 'income', cardId: targetCard.id });
-
-        await batch.commit();
-        document.getElementById('t-step-2').style.display = 'none';
-        document.getElementById('t-success').style.display = 'block';
+        setBtnLoading('btn-exec-transfer', true, '');
+        try {
+            const batch = db.batch();
+            batch.update(db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selectedCardFrom.id), { balance: firebase.firestore.FieldValue.increment(-amount) });
+            batch.update(targetCard.ref, { balance: firebase.firestore.FieldValue.increment(amount) });
+            
+            const tx = { amount, date: Date.now(), title: `Перевод ${targetUser.name}`, type: 'outcome', cardId: selectedCardFrom.id };
+            batch.set(db.collection('users').doc(auth.currentUser.uid).collection('transactions').doc(), tx);
+            batch.set(db.collection('users').doc(targetUser.uid).collection('transactions').doc(), { ...tx, title: `От ${myData.name}`, type: 'income', cardId: targetCard.id });
+            
+            await batch.commit();
+            document.getElementById('t-step-2').style.display = 'none';
+            document.getElementById('t-success').style.display = 'block';
+        } catch(e) { 
+            alert("Ошибка перевода"); 
+            setBtnLoading('btn-exec-transfer', false, 'Отправить');
+        }
     }
 
     function openSelfTransfer() {
-        selfFrom = null; selfTo = null;
         renderCardSelection('self-from-list', (c) => selfFrom = c);
         renderCardSelection('self-to-list', (c) => selfTo = c);
         showScreen('screen-self-transfer');
@@ -447,22 +435,69 @@
 
     async function executeSelfTransfer() {
         const amount = parseInt(document.getElementById('self-amount').value);
-        if(!selfFrom || !selfTo || selfFrom.id === selfTo.id) return alert("Выберите две разные карты");
-        if(!amount || amount <= 0 || selfFrom.balance < amount) return alert("Некорректная сумма");
+        if(!selfFrom || !selfTo || selfFrom.id === selfTo.id || !amount || amount <= 0) return alert("Ошибка выбора");
+        if(selfFrom.balance < amount) return alert("Недостаточно средств");
 
-        const batch = db.batch();
-        batch.update(db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selfFrom.id), { balance: firebase.firestore.FieldValue.increment(-amount) });
-        batch.update(db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selfTo.id), { balance: firebase.firestore.FieldValue.increment(amount) });
-        
-        batch.set(db.collection('users').doc(auth.currentUser.uid).collection('transactions').doc(), {
-            amount, date: Date.now(), title: "Между своими счетами", type: 'transfer', cardId: selfFrom.id
+        setBtnLoading('btn-self-transfer', true, '');
+        try {
+            const batch = db.batch();
+            batch.update(db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selfFrom.id), { balance: firebase.firestore.FieldValue.increment(-amount) });
+            batch.update(db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selfTo.id), { balance: firebase.firestore.FieldValue.increment(amount) });
+            await batch.commit();
+            location.reload();
+        } catch(e) { 
+            alert("Ошибка"); 
+            setBtnLoading('btn-self-transfer', false, 'Перевести');
+        }
+    }
+
+    function renderCardSelection(id, onSelect) {
+        const el = document.getElementById(id); el.innerHTML = '';
+        myCards.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'select-card-item';
+            div.innerHTML = `<span>•••• ${c.cardNum.slice(-4)}</span> <b>${c.balance} ₽</b>`;
+            div.onclick = () => {
+                document.querySelectorAll(`#${id} .select-card-item`).forEach(i => i.classList.remove('selected'));
+                div.classList.add('selected'); onSelect(c);
+            };
+            el.appendChild(div);
         });
+    }
 
-        await batch.commit();
-        location.reload();
+    async function openCardDetails(id) {
+        currentCardId = id;
+        let card = myCards.find(c => c.id === id);
+        showScreen('screen-card-detail');
+        document.getElementById('detail-card-visual').innerHTML = `
+            <div class="bank-card" style="background:${card.color}; margin: 0 auto; opacity:${card.blocked ? 0.6 : 1}">
+                <div style="font-weight:900;">BINGUS PREMIUM</div>
+                <div style="font-size:24px; font-weight:800;">${card.balance.toLocaleString()} ₽</div>
+                <div style="font-family:monospace; font-size:16px;">${card.cardNum.replace(/(\d{4})(?=\d)/g, '$1 ')}</div>
+            </div>`;
+        
+        const blockBtn = document.getElementById('btn-block-card');
+        blockBtn.innerText = card.blocked ? "Разблокировать" : "Заблокировать карту";
+        blockBtn.style.background = card.blocked ? "var(--success)" : "var(--danger)";
+
+        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('transactions').where('cardId','==',id).get();
+        renderTxList(snap, 'card-tx-list');
+    }
+
+    async function toggleBlockCard() {
+        if(!currentCardId) return;
+        let card = myCards.find(c => c.id === currentCardId);
+        const newState = !card.blocked;
+        
+        setBtnLoading('btn-block-card', true, '');
+        try {
+            await db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(currentCardId).update({ blocked: newState });
+            location.reload();
+        } catch(e) { alert("Ошибка"); }
     }
 
     async function issueCard() {
+        setBtnLoading('btn-issue', true, '');
         const num = Array.from({length:16},()=>Math.floor(Math.random()*10)).join('');
         await db.collection('users').doc(auth.currentUser.uid).collection('cards').add({
             cardNum: num, color: selectedColor, balance: 0, blocked: false
@@ -472,59 +507,35 @@
 
     async function register() {
         const name = document.getElementById('reg-name').value, email = document.getElementById('reg-email').value, pass = document.getElementById('reg-password').value;
-        if(pass.length < 6) return alert("Слишком короткий пароль");
+        if(!name || !email || pass.length < 6) return alert("Проверьте данные");
+        setBtnLoading('btn-reg', true, '');
         try {
             const res = await auth.createUserWithEmailAndPassword(email, pass);
             await db.collection('users').doc(res.user.uid).set({ uid: res.user.uid, name, email: email.toLowerCase() });
-            // Первая карта с бонусом
             await db.collection('users').doc(res.user.uid).collection('cards').add({
                 cardNum: Array.from({length:16},()=>Math.floor(Math.random()*10)).join(''),
                 color: "linear-gradient(135deg, #FF9000, #FF6B00)", balance: 1000, blocked: false
             });
             location.reload();
-        } catch(e) { alert("Ошибка при регистрации"); }
+        } catch(e) { alert("Ошибка регистрации"); setBtnLoading('btn-reg', false, 'Открыть счет'); }
     }
 
-    function renderTxList(snap, containerId) {
-        const list = document.getElementById(containerId);
-        list.innerHTML = snap.empty ? '<p style="text-align:center; color:#999; margin-top:20px;">Операций еще не было</p>' : '';
+    function renderTxList(snap, id) {
+        const list = document.getElementById(id);
+        list.innerHTML = snap.empty ? '<p style="text-align:center; color:#999;">Нет операций</p>' : '';
         snap.forEach(doc => {
             const tx = doc.data();
-            list.innerHTML += `
-                <div style="display:flex; justify-content:space-between; padding:15px 0; border-bottom:1px solid #f2f2f2;">
-                    <div><div style="font-weight:700;">${tx.title}</div><small style="color:#999">${new Date(tx.date).toLocaleDateString()}</small></div>
-                    <div style="color:${tx.type==='income'?'var(--success)':'var(--text)'}; font-weight:800">
-                        ${tx.type==='income'?'+':''}${tx.amount.toLocaleString()} ₽
-                    </div>
-                </div>`;
-        });
-    }
-
-    async function openCardDetails(id) {
-        let card = myCards.find(c => c.id === id);
-        showScreen('screen-card-detail');
-        document.getElementById('detail-card-visual').innerHTML = `
-            <div class="bank-card" style="background:${card.color}; margin: 0 auto; cursor: default;">
-                <div style="font-weight:900; font-size:14px;">BINGUS PREMIUM</div>
-                <div style="font-size:28px; font-weight:800;">${(card.balance || 0).toLocaleString()} ₽</div>
-                <div style="font-family:monospace; font-size:18px; letter-spacing:2px;">${card.cardNum.replace(/(\d{4})(?=\d)/g, '$1 ')}</div>
+            list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #f2f2f2;">
+                <div><div style="font-weight:700;">${tx.title}</div><small style="color:#999">${new Date(tx.date).toLocaleDateString()}</small></div>
+                <div style="color:${tx.type==='income'?'var(--success)':'var(--text)'}; font-weight:800">${tx.type==='income'?'+':''}${tx.amount} ₽</div>
             </div>`;
-        
-        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('transactions').where('cardId','==',id).get();
-        renderTxList(snap, 'card-tx-list');
-    }
-
-    async function login() {
-        const email = document.getElementById('login-email').value, pass = document.getElementById('login-password').value;
-        try { await auth.signInWithEmailAndPassword(email, pass); }
-        catch(e) { alert("Неверный логин или пароль"); }
+        });
     }
 
     function logout() { auth.signOut().then(()=>location.reload()); }
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        document.getElementById(id).scrollTop = 0;
     }
     function setNewColor(c) { selectedColor = c; }
     function openCardModal() { document.getElementById('card-modal').style.display = 'flex'; }
