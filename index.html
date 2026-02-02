@@ -38,14 +38,16 @@
         }
 
         #loading-screen { 
-            position: fixed; inset: 0;
+            position: fixed;
+            inset: 0;
             background: var(--white); 
             display: flex; justify-content: center; align-items: center; 
             z-index: 9999;
         }
         
         .loader-ring {
-            width: 60px; height: 60px;
+            width: 60px;
+            height: 60px;
             border: 5px solid #f3f3f3;
             border-top: 5px solid var(--primary);
             border-radius: 50%;
@@ -53,7 +55,8 @@
         }
         
         .btn-loader {
-            width: 20px; height: 20px;
+            width: 20px;
+            height: 20px;
             border: 3px solid rgba(255,255,255,0.3);
             border-top: 3px solid white;
             border-radius: 50%;
@@ -63,14 +66,16 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .app-container { 
-            width: 100%; height: 100%; max-width: 500px; 
+            width: 100%;
+            height: 100%; max-width: 500px; 
             margin: 0 auto; position: relative; 
             background: var(--bg); overflow: hidden;
             display: flex; flex-direction: column;
         }
 
         .screen { 
-            padding: 20px; display: none; flex-direction: column; 
+            padding: 20px;
+            display: none; flex-direction: column; 
             width: 100%; height: 100%; position: absolute; 
             background: var(--bg); top: 0; left: 0; overflow-y: auto;
         }
@@ -82,13 +87,15 @@
         }
 
         .header { 
-            display: flex; justify-content: space-between; align-items: center; 
+            display: flex;
+            justify-content: space-between; align-items: center; 
             padding: 10px 20px; background: var(--bg); flex-shrink: 0;
             margin-top: 10px;
         }
         
         .logout-btn {
-            background: rgba(255, 59, 48, 0.1); color: var(--danger);
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--danger);
             padding: 8px 16px; border-radius: 12px; font-size: 14px; 
             font-weight: 600; cursor: pointer;
         }
@@ -101,7 +108,8 @@
         .cards-wrapper::-webkit-scrollbar { display: none; }
 
         .bank-card {
-            min-width: 280px; width: 85%; max-width: 320px;
+            min-width: 280px;
+            width: 85%; max-width: 320px;
             scroll-snap-align: center;
             aspect-ratio: 1.58 / 1;
             border-radius: 24px; padding: 25px;
@@ -112,29 +120,34 @@
         }
 
         .history-section {
-            background: var(--white); border-radius: 35px 35px 0 0;
+            background: var(--white);
+            border-radius: 35px 35px 0 0;
             padding: 25px; flex-grow: 1; 
             box-shadow: 0 -5px 20px rgba(0,0,0,0.03);
             margin-top: 10px;
         }
 
         input {
-            width: 100%; padding: 18px; margin-bottom: 12px; 
+            width: 100%;
+            padding: 18px; margin-bottom: 12px; 
             border-radius: 18px; border: 1px solid #ddd;
             font-size: 16px; outline: none; background: #fff;
         }
 
         .btn { 
-            width: 100%; padding: 18px; background: var(--primary); 
+            width: 100%;
+            padding: 18px; background: var(--primary); 
             color: white; border: none; border-radius: 20px; 
             font-size: 17px; font-weight: 700; cursor: pointer;
-            display: flex; justify-content: center; align-items: center; gap: 10px;
+            display: flex; justify-content: center;
+            align-items: center; gap: 10px;
             flex-shrink: 0;
         }
         .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
         .select-card-item {
-            background: #fff; padding: 15px; border-radius: 16px;
+            background: #fff;
+            padding: 15px; border-radius: 16px;
             margin-bottom: 10px; cursor: pointer; border: 2px solid transparent;
             display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
@@ -142,7 +155,8 @@
         .select-card-item.selected { border-color: var(--primary); background: #fff4ed; }
 
         .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7); 
+            position: fixed;
+            inset: 0; background: rgba(0,0,0,0.7); 
             display: none; align-items: center; justify-content: center; 
             z-index: 2000; backdrop-filter: blur(8px);
         }
@@ -272,8 +286,8 @@
     <div style="background:white; padding:35px; border-radius:30px; width:90%; max-width:380px; text-align:center;">
         <h3>Новая карта</h3>
         <div style="display:flex; gap:15px; justify-content:center; margin:25px 0;">
-            <div onclick="setNewColor('linear-gradient(135deg, #FF9000, #FF6B00)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #FF9000, #FF6B00);"></div>
-            <div onclick="setNewColor('linear-gradient(135deg, #1C1C1E, #444)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #1C1C1E, #444);"></div>
+            <div onclick="setNewColor('linear-gradient(135deg, #FF9000, #FF6B00)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #FF9000, #FF6B00); cursor:pointer;"></div>
+            <div onclick="setNewColor('linear-gradient(135deg, #1C1C1E, #444)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #1C1C1E, #444); cursor:pointer;"></div>
         </div>
         <button class="btn" id="btn-issue" onclick="issueCard()">Выпустить</button>
         <p onclick="closeCardModal()" style="margin-top:20px; cursor:pointer;">Отмена</p>
@@ -297,6 +311,63 @@
     let myData = null, myCards = [], currentCardId = null, selectedCardFrom = null;
     let html5QrCode = null;
     let sbpData = { termId: "", amount: 0 };
+    let selectedNewColor = 'linear-gradient(135deg, #FF9000, #FF6B00)';
+
+    // --- ФУНКЦИЯ РЕГИСТРАЦИИ ---
+    async function register() {
+        const name = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        const pass = document.getElementById('reg-password').value;
+
+        if(!name || !email || pass.length < 6) return alert("Заполните все поля (пароль от 6 символов)");
+        
+        setBtnLoading('btn-reg', true, '');
+        
+        try {
+            const res = await auth.createUserWithEmailAndPassword(email, pass);
+            const uid = res.user.uid;
+            
+            // Создаем профиль в Firestore
+            await db.collection('users').doc(uid).set({
+                name: name,
+                email: email,
+                createdAt: Date.now()
+            });
+
+            // Выпускаем первую карту (бонус 5000)
+            const cardNum = "4400" + Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
+            await db.collection('users').doc(uid).collection('cards').add({
+                cardNum: cardNum,
+                balance: 5000,
+                color: 'linear-gradient(135deg, #FF9000, #FF6B00)',
+                blocked: false,
+                type: 'debit'
+            });
+
+            alert("Счет успешно создан! Вам начислено 5000 ₽");
+            location.reload();
+        } catch(e) {
+            alert("Ошибка: " + e.message);
+            setBtnLoading('btn-reg', false, 'Создать счет');
+        }
+    }
+
+    // --- ВЫПУСК НОВОЙ КАРТЫ ---
+    function setNewColor(c) { selectedNewColor = c; }
+
+    async function issueCard() {
+        setBtnLoading('btn-issue', true, '');
+        const cardNum = "4400" + Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
+        try {
+            await db.collection('users').doc(auth.currentUser.uid).collection('cards').add({
+                cardNum: cardNum,
+                balance: 0,
+                color: selectedNewColor,
+                blocked: false
+            });
+            location.reload();
+        } catch(e) { alert(e.message); setBtnLoading('btn-issue', false, 'Выпустить'); }
+    }
 
     // --- РАБОТА СО СКАНЕРОМ ---
     function startSbpScanner() {
@@ -305,7 +376,6 @@
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         
         html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
-            // Формат QR: binguspay://TERM-1234/500
             if (decodedText.startsWith("binguspay://")) {
                 const parts = decodedText.replace("binguspay://", "").split("/");
                 sbpData.termId = parts[0];
@@ -318,31 +388,34 @@
                     showScreen('screen-sbp-confirm');
                 });
             }
+        }).catch(err => {
+            alert("Ошибка камеры: " + err);
+            showScreen('screen-payments-hub');
         });
     }
 
     function stopScannerAndBack() {
-        if(html5QrCode) html5QrCode.stop().finally(() => showScreen('screen-payments-hub'));
-        else showScreen('screen-payments-hub');
+        if(html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().finally(() => showScreen('screen-payments-hub'));
+        } else {
+            showScreen('screen-payments-hub');
+        }
     }
 
     // --- ЛОГИКА ОПЛАТЫ СБП ---
     async function paySbp() {
         if(!selectedCardFrom) return alert("Выберите карту");
-        
         const termDoc = db.collection('transactions_sbp').doc(sbpData.termId);
         setBtnLoading('btn-confirm-sbp', true, '');
 
         if(selectedCardFrom.balance < sbpData.amount) {
-            await termDoc.set({ status: 'error_insufficient', timestamp: Date.now() });
+            try { await termDoc.set({ status: 'error_insufficient', timestamp: Date.now() }); } catch(e){}
             alert("Недостаточно средств");
             setBtnLoading('btn-confirm-sbp', false, 'Оплатить');
             return;
         }
 
         try {
-            await termDoc.update({ status: 'processing' });
-            
             const batch = db.batch();
             const cardRef = db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selectedCardFrom.id);
             
@@ -350,28 +423,34 @@
             batch.set(db.collection('users').doc(auth.currentUser.uid).collection('transactions').doc(), {
                 amount: sbpData.amount, title: `СБП: ${sbpData.termId}`, type: 'outcome', date: Date.now(), cardId: selectedCardFrom.id
             });
-            batch.update(termDoc, { status: 'success', finalAmount: sbpData.amount });
+            batch.set(termDoc, { status: 'success', finalAmount: sbpData.amount, timestamp: Date.now() }, {merge: true});
 
             await batch.commit();
             alert("Оплачено!");
             location.reload();
         } catch(e) {
-            alert("Ошибка транзакции");
+            alert("Ошибка транзакции: " + e.message);
             setBtnLoading('btn-confirm-sbp', false, 'Оплатить');
         }
     }
 
-    // --- БАЗОВЫЕ ФУНКЦИИ БАНКА (НЕ ИЗМЕНЯТЬ) ---
+    // --- БАЗОВЫЕ ФУНКЦИИ БАНКА ---
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            const userRef = db.collection('users').doc(user.uid);
-            const doc = await userRef.get();
-            myData = doc.data();
-            const cardsSnap = await userRef.collection('cards').get();
-            myCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
-            renderMain();
-            showScreen('screen-main');
-        } else { showScreen('screen-login'); }
+            try {
+                const userRef = db.collection('users').doc(user.uid);
+                const doc = await userRef.get();
+                myData = doc.data();
+                const cardsSnap = await userRef.collection('cards').get();
+                myCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderMain();
+                showScreen('screen-main');
+            } catch(e) {
+                console.error(e);
+            }
+        } else { 
+            showScreen('screen-login'); 
+        }
         document.getElementById('loading-screen').style.display = 'none';
     });
 
@@ -400,7 +479,7 @@
         showScreen('screen-card-detail');
         document.getElementById('detail-card-visual').innerHTML = `<div class="bank-card" style="background:${card.color}; margin:auto;">
             <div style="font-weight:900;">BINGUS PREMIUM</div>
-            <div style="font-size:26px; font-weight:800;">${card.balance} ₽</div>
+            <div style="font-size:26px; font-weight:800;">${card.balance.toLocaleString()} ₽</div>
             <div style="font-family:monospace;">${card.cardNum}</div>
         </div>`;
         document.getElementById('btn-block-card').innerText = card.blocked ? "Разблокировать" : "Заблокировать";
@@ -415,14 +494,16 @@
     }
 
     function renderCardSelection(id, onSelect) {
-        const el = document.getElementById(id); el.innerHTML = '';
+        const el = document.getElementById(id);
+        el.innerHTML = '';
         myCards.filter(c => !c.blocked).forEach(c => {
             const div = document.createElement('div');
             div.className = 'select-card-item';
-            div.innerHTML = `<span>•••• ${c.cardNum.slice(-4)}</span> <b>${c.balance} ₽</b>`;
+            div.innerHTML = `<span>•••• ${c.cardNum.slice(-4)}</span> <b>${c.balance.toLocaleString()} ₽</b>`;
             div.onclick = () => {
                 document.querySelectorAll(`#${id} .select-card-item`).forEach(i => i.classList.remove('selected'));
-                div.classList.add('selected'); onSelect(c);
+                div.classList.add('selected'); 
+                onSelect(c);
             };
             el.appendChild(div);
         });
@@ -430,29 +511,45 @@
 
     function setBtnLoading(id, load, text) {
         const b = document.getElementById(id);
+        if(!b) return;
         if(load) { b.disabled = true; b.innerHTML = '<div class="btn-loader"></div>'; }
         else { b.disabled = false; b.innerHTML = text; }
     }
 
     function renderTxList(snap, id) {
-        const list = document.getElementById(id); list.innerHTML = '';
+        const list = document.getElementById(id);
+        list.innerHTML = '';
+        if(snap.empty) { list.innerHTML = '<p style="color:gray; text-align:center;">Нет операций</p>'; return; }
         snap.forEach(doc => {
             const tx = doc.data();
             list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
-                <span>${tx.title}</span><b>${tx.amount} ₽</b>
+                <span>${tx.title}</span><b>${tx.type === 'outcome' ? '-' : '+'}${tx.amount.toLocaleString()} ₽</b>
             </div>`;
         });
     }
 
-    function login() { auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-password').value); }
+    function login() { 
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-password').value;
+        setBtnLoading('btn-login', true, '');
+        auth.signInWithEmailAndPassword(email, pass).catch(e => {
+            alert(e.message);
+            setBtnLoading('btn-login', false, 'Войти');
+        }); 
+    }
+    
     function logout() { auth.signOut().then(()=>location.reload()); }
+    
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        const target = document.getElementById(id);
+        if(target) target.classList.add('active');
     }
+    
     function openCardModal() { document.getElementById('card-modal').style.display = 'flex'; }
     function closeCardModal() { document.getElementById('card-modal').style.display = 'none'; }
-    function openTransfer(type) { showScreen('screen-transfer'); }
+    function openTransfer(type) { alert("В разработке"); }
+    function openSelfTransfer() { alert("В разработке"); }
 </script>
 </body>
 </html>
