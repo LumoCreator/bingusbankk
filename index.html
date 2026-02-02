@@ -161,7 +161,6 @@
             z-index: 2000; backdrop-filter: blur(8px);
         }
 
-        /* Стиль для видео сканера */
         #reader {
             width: 100%;
             border-radius: 20px;
@@ -230,7 +229,7 @@
         <div onclick="stopScannerAndBack()" style="cursor:pointer; font-weight:700;">← Отмена</div>
         <h2 style="margin: 25px 0;">Сканирование QR</h2>
         <div id="reader"></div>
-        <p style="color: var(--gray); text-align: center; margin-top: 20px;">Наведите камеру на QR код на терминале</p>
+        <p style="color: var(--gray); text-align: center; margin-top: 20px;">Наведите камеру на QR код</p>
     </div>
 
     <div id="screen-sbp-confirm" class="screen">
@@ -270,6 +269,17 @@
         </div>
     </div>
 
+    <div id="screen-self-transfer" class="screen">
+        <div onclick="showScreen('screen-transfer-menu')" style="cursor:pointer; font-weight:700;">← Назад</div>
+        <h2>Между своими</h2>
+        <p style="color: var(--gray);">Откуда:</p>
+        <div id="self-cards-from"></div>
+        <p style="color: var(--gray); margin-top: 15px;">Куда:</p>
+        <div id="self-cards-to"></div>
+        <input type="number" id="self-amount" placeholder="Сумма ₽" style="margin-top:20px;">
+        <button class="btn" id="btn-exec-self" onclick="executeSelfTransfer()">Перевести</button>
+    </div>
+
     <div id="screen-card-detail" class="screen">
         <div onclick="showScreen('screen-main')" style="cursor:pointer; font-weight:700;">✕ Закрыть</div>
         <div id="detail-card-visual" style="margin: 25px 0;"></div>
@@ -286,8 +296,8 @@
     <div style="background:white; padding:35px; border-radius:30px; width:90%; max-width:380px; text-align:center;">
         <h3>Новая карта</h3>
         <div style="display:flex; gap:15px; justify-content:center; margin:25px 0;">
-            <div onclick="setNewColor('linear-gradient(135deg, #FF9000, #FF6B00)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #FF9000, #FF6B00); cursor:pointer;"></div>
-            <div onclick="setNewColor('linear-gradient(135deg, #1C1C1E, #444)')" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #1C1C1E, #444); cursor:pointer;"></div>
+            <div onclick="selectedNewColor='linear-gradient(135deg, #FF9000, #FF6B00)'" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #FF9000, #FF6B00); cursor:pointer;"></div>
+            <div onclick="selectedNewColor='linear-gradient(135deg, #1C1C1E, #444)'" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #1C1C1E, #444); cursor:pointer;"></div>
         </div>
         <button class="btn" id="btn-issue" onclick="issueCard()">Выпустить</button>
         <p onclick="closeCardModal()" style="margin-top:20px; cursor:pointer;">Отмена</p>
@@ -308,43 +318,41 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    let myData = null, myCards = [], currentCardId = null, selectedCardFrom = null;
+    let myData = null, myCards = [], currentCardId = null;
+    let selectedCardFrom = null, selectedCardTo = null;
+    let selectedNewColor = 'linear-gradient(135deg, #FF9000, #FF6B00)';
     let html5QrCode = null;
     let sbpData = { termId: "", amount: 0 };
-    let selectedNewColor = 'linear-gradient(135deg, #FF9000, #FF6B00)';
+    let transferType = ''; 
 
-    // --- ФУНКЦИЯ РЕГИСТРАЦИИ ---
+    // --- ИСПРАВЛЕННАЯ РЕГИСТРАЦИЯ ---
     async function register() {
         const name = document.getElementById('reg-name').value;
         const email = document.getElementById('reg-email').value;
         const pass = document.getElementById('reg-password').value;
 
         if(!name || !email || pass.length < 6) return alert("Заполните все поля (пароль от 6 символов)");
-        
         setBtnLoading('btn-reg', true, '');
-        
+
         try {
             const res = await auth.createUserWithEmailAndPassword(email, pass);
             const uid = res.user.uid;
             
-            // Создаем профиль в Firestore
             await db.collection('users').doc(uid).set({
                 name: name,
                 email: email,
                 createdAt: Date.now()
             });
 
-            // Выпускаем первую карту (бонус 5000)
-            const cardNum = "4400" + Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
+            // Первая карта с бонусом
             await db.collection('users').doc(uid).collection('cards').add({
-                cardNum: cardNum,
+                cardNum: "4400" + Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0'),
                 balance: 5000,
                 color: 'linear-gradient(135deg, #FF9000, #FF6B00)',
-                blocked: false,
-                type: 'debit'
+                blocked: false
             });
 
-            alert("Счет успешно создан! Вам начислено 5000 ₽");
+            alert("Успешно! Вам начислено 5000 ₽");
             location.reload();
         } catch(e) {
             alert("Ошибка: " + e.message);
@@ -352,105 +360,48 @@
         }
     }
 
-    // --- ВЫПУСК НОВОЙ КАРТЫ ---
-    function setNewColor(c) { selectedNewColor = c; }
-
-    async function issueCard() {
-        setBtnLoading('btn-issue', true, '');
-        const cardNum = "4400" + Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
-        try {
-            await db.collection('users').doc(auth.currentUser.uid).collection('cards').add({
-                cardNum: cardNum,
-                balance: 0,
-                color: selectedNewColor,
-                blocked: false
-            });
-            location.reload();
-        } catch(e) { alert(e.message); setBtnLoading('btn-issue', false, 'Выпустить'); }
+    // --- ПЕРЕВОДЫ МЕЖДУ СВОИМИ ---
+    function openSelfTransfer() {
+        showScreen('screen-self-transfer');
+        renderCardSelection('self-cards-from', (c) => selectedCardFrom = c);
+        renderCardSelection('self-cards-to', (c) => selectedCardTo = c);
     }
 
-    // --- РАБОТА СО СКАНЕРОМ ---
-    function startSbpScanner() {
-        showScreen('screen-sbp-scan');
-        html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-        
-        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
-            if (decodedText.startsWith("binguspay://")) {
-                const parts = decodedText.replace("binguspay://", "").split("/");
-                sbpData.termId = parts[0];
-                sbpData.amount = parseInt(parts[1]);
-                
-                html5QrCode.stop().then(() => {
-                    document.getElementById('sbp-term-id').innerText = sbpData.termId;
-                    document.getElementById('sbp-amount-val').innerText = sbpData.amount.toLocaleString() + " ₽";
-                    renderCardSelection('sbp-cards', (c) => selectedCardFrom = c);
-                    showScreen('screen-sbp-confirm');
-                });
-            }
-        }).catch(err => {
-            alert("Ошибка камеры: " + err);
-            showScreen('screen-payments-hub');
-        });
-    }
+    async function executeSelfTransfer() {
+        const amt = parseInt(document.getElementById('self-amount').value);
+        if(!selectedCardFrom || !selectedCardTo || !amt || amt <= 0) return alert("Выберите карты и сумму");
+        if(selectedCardFrom.id === selectedCardTo.id) return alert("Выберите разные карты");
+        if(selectedCardFrom.balance < amt) return alert("Недостаточно средств");
 
-    function stopScannerAndBack() {
-        if(html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().finally(() => showScreen('screen-payments-hub'));
-        } else {
-            showScreen('screen-payments-hub');
-        }
-    }
-
-    // --- ЛОГИКА ОПЛАТЫ СБП ---
-    async function paySbp() {
-        if(!selectedCardFrom) return alert("Выберите карту");
-        const termDoc = db.collection('transactions_sbp').doc(sbpData.termId);
-        setBtnLoading('btn-confirm-sbp', true, '');
-
-        if(selectedCardFrom.balance < sbpData.amount) {
-            try { await termDoc.set({ status: 'error_insufficient', timestamp: Date.now() }); } catch(e){}
-            alert("Недостаточно средств");
-            setBtnLoading('btn-confirm-sbp', false, 'Оплатить');
-            return;
-        }
-
+        setBtnLoading('btn-exec-self', true, '');
         try {
             const batch = db.batch();
-            const cardRef = db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selectedCardFrom.id);
+            const fromRef = db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selectedCardFrom.id);
+            const toRef = db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selectedCardTo.id);
+
+            batch.update(fromRef, { balance: firebase.firestore.FieldValue.increment(-amt) });
+            batch.update(toRef, { balance: firebase.firestore.FieldValue.increment(amt) });
             
-            batch.update(cardRef, { balance: firebase.firestore.FieldValue.increment(-sbpData.amount) });
             batch.set(db.collection('users').doc(auth.currentUser.uid).collection('transactions').doc(), {
-                amount: sbpData.amount, title: `СБП: ${sbpData.termId}`, type: 'outcome', date: Date.now(), cardId: selectedCardFrom.id
+                title: "Между своими", amount: amt, type: "self", date: Date.now()
             });
-            batch.set(termDoc, { status: 'success', finalAmount: sbpData.amount, timestamp: Date.now() }, {merge: true});
 
             await batch.commit();
-            alert("Оплачено!");
+            alert("Переведено!");
             location.reload();
-        } catch(e) {
-            alert("Ошибка транзакции: " + e.message);
-            setBtnLoading('btn-confirm-sbp', false, 'Оплатить');
-        }
+        } catch(e) { alert(e.message); setBtnLoading('btn-exec-self', false, 'Перевести'); }
     }
 
-    // --- БАЗОВЫЕ ФУНКЦИИ БАНКА ---
+    // --- ОСНОВНОЙ ЦИКЛ ---
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            try {
-                const userRef = db.collection('users').doc(user.uid);
-                const doc = await userRef.get();
-                myData = doc.data();
-                const cardsSnap = await userRef.collection('cards').get();
-                myCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                renderMain();
-                showScreen('screen-main');
-            } catch(e) {
-                console.error(e);
-            }
-        } else { 
-            showScreen('screen-login'); 
-        }
+            const doc = await db.collection('users').doc(user.uid).get();
+            myData = doc.data();
+            const cardsSnap = await db.collection('users').doc(user.uid).collection('cards').get();
+            myCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            renderMain();
+            showScreen('screen-main');
+        } else { showScreen('screen-login'); }
         document.getElementById('loading-screen').style.display = 'none';
     });
 
@@ -470,7 +421,16 @@
                 </div>`;
         });
         document.getElementById('total-balance').innerText = `Баланс: ${total.toLocaleString()} ₽`;
-        db.collection('users').doc(auth.currentUser.uid).collection('transactions').orderBy('date','desc').limit(10).get().then(snap => renderTxList(snap, 'main-tx-list'));
+        db.collection('users').doc(auth.currentUser.uid).collection('transactions').orderBy('date','desc').limit(10).get().then(snap => {
+            const list = document.getElementById('main-tx-list');
+            list.innerHTML = '';
+            snap.forEach(doc => {
+                const tx = doc.data();
+                list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #eee;">
+                    <span>${tx.title}</span><b>${tx.amount.toLocaleString()} ₽</b>
+                </div>`;
+            });
+        });
     }
 
     async function openCardDetails(id) {
@@ -482,28 +442,30 @@
             <div style="font-size:26px; font-weight:800;">${card.balance.toLocaleString()} ₽</div>
             <div style="font-family:monospace;">${card.cardNum}</div>
         </div>`;
-        document.getElementById('btn-block-card').innerText = card.blocked ? "Разблокировать" : "Заблокировать";
-        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('transactions').where('cardId','==',id).get();
-        renderTxList(snap, 'card-tx-list');
     }
 
-    async function toggleBlockCard() {
-        let card = myCards.find(c => c.id === currentCardId);
-        await db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(currentCardId).update({ blocked: !card.blocked });
+    async function issueCard() {
+        setBtnLoading('btn-issue', true, '');
+        await db.collection('users').doc(auth.currentUser.uid).collection('cards').add({
+            balance: 0,
+            cardNum: "4400" + Math.random().toString().slice(2,14),
+            color: selectedNewColor,
+            blocked: false
+        });
         location.reload();
     }
 
     function renderCardSelection(id, onSelect) {
         const el = document.getElementById(id);
         el.innerHTML = '';
-        myCards.filter(c => !c.blocked).forEach(c => {
+        myCards.forEach(c => {
+            if(c.blocked) return;
             const div = document.createElement('div');
             div.className = 'select-card-item';
-            div.innerHTML = `<span>•••• ${c.cardNum.slice(-4)}</span> <b>${c.balance.toLocaleString()} ₽</b>`;
+            div.innerHTML = `<span>•••• ${c.cardNum.slice(-4)}</span> <b>${c.balance} ₽</b>`;
             div.onclick = () => {
                 document.querySelectorAll(`#${id} .select-card-item`).forEach(i => i.classList.remove('selected'));
-                div.classList.add('selected'); 
-                onSelect(c);
+                div.classList.add('selected'); onSelect(c);
             };
             el.appendChild(div);
         });
@@ -511,45 +473,34 @@
 
     function setBtnLoading(id, load, text) {
         const b = document.getElementById(id);
-        if(!b) return;
         if(load) { b.disabled = true; b.innerHTML = '<div class="btn-loader"></div>'; }
         else { b.disabled = false; b.innerHTML = text; }
     }
 
-    function renderTxList(snap, id) {
-        const list = document.getElementById(id);
-        list.innerHTML = '';
-        if(snap.empty) { list.innerHTML = '<p style="color:gray; text-align:center;">Нет операций</p>'; return; }
-        snap.forEach(doc => {
-            const tx = doc.data();
-            list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
-                <span>${tx.title}</span><b>${tx.type === 'outcome' ? '-' : '+'}${tx.amount.toLocaleString()} ₽</b>
-            </div>`;
-        });
-    }
-
-    function login() { 
-        const email = document.getElementById('login-email').value;
-        const pass = document.getElementById('login-password').value;
-        setBtnLoading('btn-login', true, '');
-        auth.signInWithEmailAndPassword(email, pass).catch(e => {
-            alert(e.message);
-            setBtnLoading('btn-login', false, 'Войти');
-        }); 
-    }
-    
-    function logout() { auth.signOut().then(()=>location.reload()); }
-    
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        const target = document.getElementById(id);
-        if(target) target.classList.add('active');
+        document.getElementById(id).classList.add('active');
     }
-    
+
+    function login() { auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-password').value); }
+    function logout() { auth.signOut().then(()=>location.reload()); }
     function openCardModal() { document.getElementById('card-modal').style.display = 'flex'; }
     function closeCardModal() { document.getElementById('card-modal').style.display = 'none'; }
-    function openTransfer(type) { alert("В разработке"); }
-    function openSelfTransfer() { alert("В разработке"); }
+    function openTransfer(t) { alert("В разработке"); }
+
+    // СБП Сканнер (упрощенно)
+    function startSbpScanner() {
+        showScreen('screen-sbp-scan');
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+            if(text.includes('binguspay')) {
+                html5QrCode.stop();
+                alert("QR считан");
+                showScreen('screen-main');
+            }
+        });
+    }
+    function stopScannerAndBack() { if(html5QrCode) html5QrCode.stop(); showScreen('screen-payments-hub'); }
 </script>
 </body>
 </html>
