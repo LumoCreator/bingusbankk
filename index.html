@@ -21,7 +21,6 @@
             --light-gray: #F2F2F7;
             --success: #34C759;
             --danger: #FF3B30;
-            --card-shadow: 0 8px 30px rgba(0,0,0,0.12);
             --nav-height: 85px;
         }
 
@@ -35,7 +34,7 @@
             background-color: var(--bg);
             margin: 0; padding: 0; 
             width: 100%; height: 100%; 
-            overflow: hidden;
+            overflow: hidden; /* Prevent body scroll, handle in .screen */
             color: var(--text);
             user-select: none;
         }
@@ -44,10 +43,8 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
 
         /* --- Loader --- */
         #loading-screen { 
@@ -71,16 +68,22 @@
         .app-container { 
             width: 100%; height: 100%; max-width: 500px; margin: 0 auto; 
             position: relative; background: var(--bg); overflow: hidden;
-            display: flex; flex-direction: column;
         }
 
         .screen { 
-            padding: 20px; display: none; flex-direction: column; 
-            width: 100%; height: 100%; position: absolute; 
-            background: var(--bg); top: 0; left: 0; overflow-y: auto;
-            padding-bottom: calc(var(--nav-height) + 20px); /* Space for bottom nav */
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            padding: 20px; 
+            display: none; flex-direction: column; 
+            background: var(--bg); 
+            overflow-y: auto; /* Scroll inside the screen */
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 120px; /* Space for Bottom Nav */
         }
+        
         .screen.active { display: flex; animation: slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+        /* Hide scrollbar for clean UI */
+        .screen::-webkit-scrollbar { display: none; }
 
         /* --- UI Elements --- */
         h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.5px; }
@@ -88,19 +91,20 @@
         .header { 
             display: flex; justify-content: space-between; align-items: center; 
             padding: 10px 5px; margin-top: 10px; margin-bottom: 20px;
+            flex-shrink: 0; /* Prevent header from squashing */
         }
-        
-        .logout-btn {
-            background: rgba(255, 59, 48, 0.1); color: var(--danger);
-            padding: 8px 16px; border-radius: 20px; font-size: 13px; 
-            font-weight: 600; cursor: pointer; transition: 0.2s;
-        }
-        .logout-btn:active { transform: scale(0.95); opacity: 0.8; }
 
+        /* --- CARDS SLIDER FIX --- */
         .cards-wrapper {
-            display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
-            gap: 15px; scrollbar-width: none; padding: 10px 5px 30px 5px;
-            margin: 0 -20px; padding-left: 20px; padding-right: 20px;
+            display: flex; 
+            overflow-x: auto; 
+            scroll-snap-type: x mandatory;
+            gap: 15px; 
+            scrollbar-width: none; 
+            /* Extra padding to prevent shadow clipping */
+            padding: 20px 20px 30px 20px; 
+            margin: 0 -20px 10px -20px; /* Negative margin to span full width */
+            flex-shrink: 0; /* Prevent compression */
         }
         .cards-wrapper::-webkit-scrollbar { display: none; }
 
@@ -112,10 +116,17 @@
             justify-content: space-between; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.1);
             position: relative; cursor: pointer; overflow: hidden;
-            transition: transform 0.3s cubic-bezier(0.3, 0, 0, 1);
-            background-size: 120% 120%;
+            transition: transform 0.2s cubic-bezier(0.3, 0, 0, 1);
+            flex-shrink: 0; /* Important: Don't squash cards */
         }
         .bank-card:active { transform: scale(0.96); }
+
+        /* --- ACTION BUTTONS FIX --- */
+        .action-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
+            margin-bottom: 30px; /* Space before history */
+            flex-shrink: 0;
+        }
 
         .glass-panel {
             background: rgba(255, 255, 255, 0.8);
@@ -123,10 +134,8 @@
             border-radius: 24px; padding: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             border: 1px solid rgba(255,255,255,0.5);
-        }
-
-        .action-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;
+            /* Allows content to flow */
+            height: auto; 
         }
 
         input {
@@ -134,9 +143,7 @@
             border-radius: 16px; border: none;
             background: #fff; font-size: 16px; outline: none;
             box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            transition: 0.2s;
         }
-        input:focus { box-shadow: 0 4px 15px rgba(0,0,0,0.08); transform: translateY(-1px); }
 
         .btn { 
             width: 100%; padding: 16px; background: var(--text); 
@@ -144,6 +151,7 @@
             font-size: 16px; font-weight: 600; cursor: pointer;
             display: flex; justify-content: center; align-items: center; gap: 10px;
             transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            flex-shrink: 0;
         }
         .btn:active { transform: scale(0.95); }
         .btn.primary { background: var(--primary); box-shadow: 0 8px 25px rgba(255, 107, 0, 0.3); }
@@ -153,7 +161,7 @@
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             height: var(--nav-height);
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95); /* More opaque */
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             display: none; justify-content: space-around; align-items: center;
             border-top: 1px solid rgba(0,0,0,0.05);
@@ -167,7 +175,7 @@
             width: 60px; height: 100%; cursor: pointer; transition: 0.2s;
         }
         .nav-item.active { color: var(--primary); }
-        .nav-item svg { width: 24px; height: 24px; fill: currentColor; transition: 0.2s; }
+        .nav-item svg { width: 24px; height: 24px; fill: currentColor; }
         .nav-item:active { transform: scale(0.9); }
 
         .nav-center-btn {
@@ -178,10 +186,10 @@
             color: white;
             box-shadow: 0 10px 25px rgba(255, 107, 0, 0.4);
             transform: translateY(-25px);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             border: 4px solid var(--bg);
+            transition: transform 0.2s;
         }
-        .nav-center-btn:active { transform: translateY(-20px) scale(0.95); box-shadow: 0 5px 15px rgba(255, 107, 0, 0.3); }
+        .nav-center-btn:active { transform: translateY(-20px) scale(0.95); }
         .nav-center-btn svg { width: 32px; height: 32px; fill: white; }
 
         /* --- Modals --- */
@@ -266,7 +274,7 @@
         </div>
     </div>
 
-    <div id="screen-pin" class="screen" style="z-index: 1500;">
+    <div id="screen-pin" class="screen" style="z-index: 1500; padding-bottom: 0;">
         <div style="position: absolute; top: 30px; right: 25px;" onclick="logout()">
             <span style="color: var(--danger); font-weight: 600; cursor: pointer; font-size: 14px;">Выйти</span>
         </div>
@@ -311,6 +319,7 @@
         </div>
 
         <div id="total-balance" style="font-size: 14px; color: var(--gray); padding: 0 5px; margin-bottom: 5px;">Общий баланс</div>
+        
         <div class="cards-wrapper" id="cards-container"></div>
         
         <div class="action-grid" style="padding: 0 5px;">
@@ -477,7 +486,6 @@
 
     // --- NAVIGATION LOGIC ---
     function switchTab(tab, el) {
-        // Reset styles
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         if(el) el.classList.add('active');
 
@@ -486,7 +494,7 @@
             loadFullHistory();
             showScreen('screen-history');
         }
-        if(tab === 'card-issue') showScreen('screen-main'); // Just scroll to cards conceptually, or maintain Main
+        if(tab === 'card-issue') showScreen('screen-main');
     }
 
     // --- PIN SYSTEM ---
@@ -546,7 +554,7 @@
         }
     }
 
-    // --- MAIN FLOW FIX (SORTING) ---
+    // --- MAIN FLOW ---
     async function initMainFlow() {
         document.getElementById('loading-screen').style.display = 'flex';
         try {
@@ -554,11 +562,10 @@
             const doc = await userRef.get();
             myData = doc.data();
             
-            // FIX: Get ALL cards then sort in JS (fixes disappearing cards)
             const cardsSnap = await userRef.collection('cards').get(); 
             myCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
             
-            // Sort: newest first. Handle missing createdAt by defaulting to 0
+            // Sort: newest first
             myCards.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
 
             renderMain();
@@ -578,7 +585,6 @@
         container.innerHTML = '';
         let total = 0;
         
-        // Staggered animation for cards
         let delay = 0;
         myCards.forEach(card => {
             total += (card.balance || 0);
@@ -592,7 +598,6 @@
         });
         document.getElementById('total-balance').innerText = `Баланс: ${total.toLocaleString()} ₽`;
         
-        // Recent history
         db.collection('users').doc(auth.currentUser.uid).collection('transactions')
           .orderBy('date','desc').limit(5).get()
           .then(snap => renderTxList(snap, 'main-tx-list'));
@@ -611,7 +616,7 @@
         let delay = 0;
         snap.forEach(doc => {
             const tx = doc.data();
-            const isInc = tx.type !== 'outcome' && tx.type !== 'self'; // Simplified logic
+            const isInc = tx.type !== 'outcome' && tx.type !== 'self';
             const icon = isInc ? '⬇️' : '↗️';
             const color = isInc ? 'var(--success)' : 'var(--text)';
             const sign = isInc ? '+' : '-';
@@ -643,7 +648,7 @@
                 createdAt: Date.now()
             });
             closeModal('card-modal');
-            initMainFlow(); // Reload to show new card sorted
+            initMainFlow(); 
         } catch(e) {
             alert("Ошибка");
         }
@@ -683,7 +688,6 @@
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        // If entering main, ensure nav is correct
         if(id === 'screen-main') {
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.querySelector('.nav-item:first-child').classList.add('active');
@@ -715,7 +719,7 @@
 
     function logout() { localStorage.removeItem('user_pin'); auth.signOut().then(()=>location.reload()); }
     
-    // --- SBP & TRANSFER (Existing Logic preserved) ---
+    // --- SBP & TRANSFER ---
     function startSbpScanner() {
         showScreen('screen-sbp-scan');
         html5QrCode = new Html5Qrcode("reader");
