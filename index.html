@@ -169,6 +169,18 @@
         }
         #reader__dashboard { display: none !important; }
         #reader video { border-radius: 20px !important; object-fit: cover !important; }
+
+        .color-dot {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+        .color-dot.active {
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -280,9 +292,12 @@
 <div id="card-modal" class="modal">
     <div style="background:white; padding:35px; border-radius:30px; width:90%; max-width:380px; text-align:center;">
         <h3>Новая карта</h3>
-        <div style="display:flex; gap:15px; justify-content:center; margin:25px 0;">
-            <div onclick="tempColor='linear-gradient(135deg, #FF9000, #FF6B00)'" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #FF9000, #FF6B00);"></div>
-            <div onclick="tempColor='linear-gradient(135deg, #1C1C1E, #444)'" style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg, #1C1C1E, #444);"></div>
+        <p style="color: var(--gray); font-size: 14px;">Выберите дизайн</p>
+        <div style="display:flex; gap:15px; justify-content:center; margin:25px 0;" id="color-picker">
+            <div onclick="selectCardColor(this, 'linear-gradient(135deg, #FF9000, #FF6B00)')" class="color-dot active" style="background:linear-gradient(135deg, #FF9000, #FF6B00);"></div>
+            <div onclick="selectCardColor(this, 'linear-gradient(135deg, #1C1C1E, #444)')" class="color-dot" style="background:linear-gradient(135deg, #1C1C1E, #444);"></div>
+            <div onclick="selectCardColor(this, 'linear-gradient(135deg, #007AFF, #0051A5)')" class="color-dot" style="background:linear-gradient(135deg, #007AFF, #0051A5);"></div>
+            <div onclick="selectCardColor(this, 'linear-gradient(135deg, #34C759, #1E8E3E)')" class="color-dot" style="background:linear-gradient(135deg, #34C759, #1E8E3E);"></div>
         </div>
         <button class="btn" id="btn-issue" onclick="issueCard()">Выпустить</button>
         <p onclick="closeCardModal()" style="margin-top:20px; cursor:pointer;">Отмена</p>
@@ -309,32 +324,43 @@
     let html5QrCode = null;
     let sbpData = { termId: "", amount: 0 };
 
-    // --- РЕГИСТРАЦИЯ ИЗ ТЕКСТ 3.txt ---
+    // --- ИСПРАВЛЕННАЯ РЕГИСТРАЦИЯ ---
     async function register() {
         const name = document.getElementById('reg-name').value;
         const email = document.getElementById('reg-email').value;
         const pass = document.getElementById('reg-password').value;
 
-        [span_1](start_span)if(!name || pass.length < 6) return alert("Данные некорректны (пароль от 6 симв.)");[span_1](end_span)
+        if(!name || pass.length < 6) return alert("Данные некорректны (пароль от 6 симв.)");
         setBtnLoading('btn-reg', true, '');
 
         try {
-            [span_2](start_span)const res = await auth.createUserWithEmailAndPassword(email, pass);[span_2](end_span)
-            [span_3](start_span)// Устанавливаем профиль с балансом 5000[span_3](end_span)
-            [span_4](start_span)await db.collection('users').doc(res.user.uid).set({ uid: res.user.uid, name, email, balance: 5000 });[span_4](end_span)
-            [span_5](start_span)// Выпускаем первую карту[span_5](end_span)
-            await db.collection('users').doc(res.user.uid).collection('cards').add({
-                [span_6](start_span)cardNum: Array.from({length:16},()=>Math.floor(Math.random()*10)).join(''),[span_6](end_span)
-                [span_7](start_span)color: "linear-gradient(135deg, #FF9000, #FF6B00)",[span_7](end_span)
-                balance: 5000,
-                [span_8](start_span)blocked: false[span_8](end_span)
+            const res = await auth.createUserWithEmailAndPassword(email, pass);
+            // Профиль пользователя
+            await db.collection('users').doc(res.user.uid).set({ 
+                uid: res.user.uid, 
+                name: name, 
+                email: email, 
+                balance: 5000 
             });
-            [span_9](start_span)location.reload();[span_9](end_span)
-        } catch(e) { alert(e.message); setBtnLoading('btn-reg', false, 'Создать счет'); }
+            // Первая карта
+            await db.collection('users').doc(res.user.uid).collection('cards').add({
+                cardNum: Array.from({length:16},()=>Math.floor(Math.random()*10)).join(''),
+                color: "linear-gradient(135deg, #FF9000, #FF6B00)",
+                balance: 5000,
+                blocked: false,
+                createdAt: Date.now()
+            });
+            location.reload();
+        } catch(e) { 
+            alert(e.message); 
+            setBtnLoading('btn-reg', false, 'Создать счет');
+        }
     }
 
-    // --- ПЕРЕВОДЫ МЕЖДУ СВОИМИ ---
+    // --- ПЕРЕВОДЫ МЕЖДУ СВОИМИ (ПОЧИНЕНО) ---
     function openSelfTransfer() {
+        selectedCardFrom = null;
+        selectedCardTo = null;
         showScreen('screen-self-transfer');
         renderCardSelection('self-cards-from', (c) => selectedCardFrom = c);
         renderCardSelection('self-cards-to', (c) => selectedCardTo = c);
@@ -351,66 +377,109 @@
             const batch = db.batch();
             const userRef = db.collection('users').doc(auth.currentUser.uid);
 
-            batch.update(userRef.collection('cards').doc(selectedCardFrom.id), { balance: firebase.firestore.FieldValue.increment(-amount) });
-            batch.update(userRef.collection('cards').doc(selectedCardTo.id), { balance: firebase.firestore.FieldValue.increment(amount) });
+            batch.update(userRef.collection('cards').doc(selectedCardFrom.id), { 
+                balance: firebase.firestore.FieldValue.increment(-amount) 
+            });
+            batch.update(userRef.collection('cards').doc(selectedCardTo.id), { 
+                balance: firebase.firestore.FieldValue.increment(amount) 
+            });
             
             batch.set(userRef.collection('transactions').doc(), {
-                title: "Между своими", amount: amount, type: "self", date: Date.now(), cardId: selectedCardFrom.id
+                title: "Между своими", 
+                amount: amount, 
+                type: "self", 
+                date: Date.now(), 
+                cardId: selectedCardFrom.id
             });
 
             await batch.commit();
-            alert("Успешно!");
+            alert("Перевод выполнен!");
             location.reload();
-        } catch(e) { alert(e.message); setBtnLoading('btn-exec-self', false, 'Перевести'); }
+        } catch(e) { 
+            alert(e.message); 
+            setBtnLoading('btn-exec-self', false, 'Перевести');
+        }
+    }
+
+    // --- ВЫПУСК КАРТЫ И СМЕНА ЦВЕТА ---
+    function selectCardColor(el, color) {
+        document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+        el.classList.add('active');
+        tempColor = color;
+    }
+
+    async function issueCard() {
+        setBtnLoading('btn-issue', true, '');
+        try {
+            await db.collection('users').doc(auth.currentUser.uid).collection('cards').add({
+                balance: 0,
+                cardNum: "4400" + Math.random().toString().slice(2,14),
+                color: tempColor,
+                blocked: false,
+                createdAt: Date.now()
+            });
+            location.reload();
+        } catch(e) {
+            alert("Ошибка при выпуске карты");
+            setBtnLoading('btn-issue', false, 'Выпустить');
+        }
     }
 
     // --- СКАНЕР СБП ---
     function startSbpScanner() {
         showScreen('screen-sbp-scan');
         html5QrCode = new Html5Qrcode("reader");
-        [span_10](start_span)const config = { fps: 10, qrbox: { width: 250, height: 250 } };[span_10](end_span)
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         
-        [span_11](start_span)html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {[span_11](end_span)
-            [span_12](start_span)if (decodedText.startsWith("binguspay://")) {[span_12](end_span)
-                [span_13](start_span)const parts = decodedText.replace("binguspay://", "").split("/");[span_13](end_span)
-                [span_14](start_span)sbpData.termId = parts[0];[span_14](end_span)
-                [span_15](start_span)sbpData.amount = parseInt(parts[1]);[span_15](end_span)
+        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+            if (decodedText.startsWith("binguspay://")) {
+                const parts = decodedText.replace("binguspay://", "").split("/");
+                sbpData.termId = parts[0];
+                sbpData.amount = parseInt(parts[1]);
                 
                 html5QrCode.stop().then(() => {
-                    [span_16](start_span)document.getElementById('sbp-term-id').innerText = sbpData.termId;[span_16](end_span)
-                    [span_17](start_span)document.getElementById('sbp-amount-val').innerText = sbpData.amount.toLocaleString() + " ₽";[span_17](end_span)
-                    [span_18](start_span)renderCardSelection('sbp-cards', (c) => selectedCardFrom = c);[span_18](end_span)
-                    [span_19](start_span)showScreen('screen-sbp-confirm');[span_19](end_span)
+                    document.getElementById('sbp-term-id').innerText = sbpData.termId;
+                    document.getElementById('sbp-amount-val').innerText = sbpData.amount.toLocaleString() + " ₽";
+                    renderCardSelection('sbp-cards', (c) => selectedCardFrom = c);
+                    showScreen('screen-sbp-confirm');
                 });
             }
         });
     }
 
     async function paySbp() {
-        [span_20](start_span)if(!selectedCardFrom) return alert("Выберите карту");[span_20](end_span)
-        [span_21](start_span)const termDoc = db.collection('transactions_sbp').doc(sbpData.termId);[span_21](end_span)
+        if(!selectedCardFrom) return alert("Выберите карту");
         setBtnLoading('btn-confirm-sbp', true, '');
-
-        [span_22](start_span)if(selectedCardFrom.balance < sbpData.amount) {[span_22](end_span)
-            [span_23](start_span)alert("Недостаточно средств");[span_23](end_span)
+        
+        if(selectedCardFrom.balance < sbpData.amount) {
+            alert("Недостаточно средств");
             setBtnLoading('btn-confirm-sbp', false, 'Оплатить');
             return;
         }
 
         try {
-            [span_24](start_span)const batch = db.batch();[span_24](end_span)
-            [span_25](start_span)const cardRef = db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(selectedCardFrom.id);[span_25](end_span)
+            const batch = db.batch();
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            const cardRef = userRef.collection('cards').doc(selectedCardFrom.id);
+            const termDoc = db.collection('transactions_sbp').doc(sbpData.termId);
             
-            [span_26](start_span)batch.update(cardRef, { balance: firebase.firestore.FieldValue.increment(-sbpData.amount) });[span_26](end_span)
-            [span_27](start_span)batch.set(db.collection('users').doc(auth.currentUser.uid).collection('transactions').doc(), {[span_27](end_span)
-                amount: sbpData.amount, title: `СБП: ${sbpData.termId}`, type: 'outcome', date: Date.now(), cardId: selectedCardFrom.id
+            batch.update(cardRef, { balance: firebase.firestore.FieldValue.increment(-sbpData.amount) });
+            batch.set(userRef.collection('transactions').doc(), {
+                amount: sbpData.amount, 
+                title: `СБП: ${sbpData.termId}`, 
+                type: 'outcome', 
+                date: Date.now(), 
+                cardId: selectedCardFrom.id
             });
-            [span_28](start_span)batch.update(termDoc, { status: 'success', finalAmount: sbpData.amount });[span_28](end_span)
+            batch.update(termDoc, { status: 'success', finalAmount: sbpData.amount });
 
-            [span_29](start_span)await batch.commit();[span_29](end_span)
+            await batch.commit();
             alert("Оплачено!");
-            [span_30](start_span)location.reload();[span_30](end_span)
-        } catch(e) { alert("Ошибка транзакции"); setBtnLoading('btn-confirm-sbp', false, 'Оплатить'); }
+            location.reload();
+        } catch(e) { 
+            alert("Ошибка транзакции"); 
+            setBtnLoading('btn-confirm-sbp', false, 'Оплатить');
+        }
     }
 
     // --- СИСТЕМНЫЕ ФУНКЦИИ ---
@@ -420,20 +489,22 @@
             const doc = await userRef.get();
             myData = doc.data();
             const cardsSnap = await userRef.collection('cards').get();
-            [span_31](start_span)myCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));[span_31](end_span)
+            myCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
             renderMain();
             showScreen('screen-main');
-        } else { showScreen('screen-login'); }
+        } else { 
+            showScreen('screen-login'); 
+        }
         document.getElementById('loading-screen').style.display = 'none';
     });
 
     function renderMain() {
         if(!myData) return;
-        [span_32](start_span)document.getElementById('user-name').innerText = `Привет, ${myData.name.split(' ')[0]}!`;[span_32](end_span)
-        [span_33](start_span)const container = document.getElementById('cards-container');[span_33](end_span)
+        document.getElementById('user-name').innerText = `Привет, ${myData.name.split(' ')[0]}!`;
+        const container = document.getElementById('cards-container');
         container.innerHTML = '';
         let total = 0;
-        [span_34](start_span)myCards.forEach(card => {[span_34](end_span)
+        myCards.forEach(card => {
             total += (card.balance || 0);
             container.innerHTML += `
                 <div class="bank-card" style="background:${card.color}; opacity:${card.blocked?0.5:1}" onclick="openCardDetails('${card.id}')">
@@ -442,81 +513,88 @@
                     <div style="font-family:monospace;">•••• ${card.cardNum.slice(-4)}</div>
                 </div>`;
         });
-        [span_35](start_span)document.getElementById('total-balance').innerText = `Баланс: ${total.toLocaleString()} ₽`;[span_35](end_span)
-        [span_36](start_span)db.collection('users').doc(auth.currentUser.uid).collection('transactions').orderBy('date','desc').limit(10).get().then(snap => renderTxList(snap, 'main-tx-list'));[span_36](end_span)
+        document.getElementById('total-balance').innerText = `Баланс: ${total.toLocaleString()} ₽`;
+        db.collection('users').doc(auth.currentUser.uid).collection('transactions').orderBy('date','desc').limit(10).get().then(snap => renderTxList(snap, 'main-tx-list'));
     }
 
     async function openCardDetails(id) {
-        [span_37](start_span)currentCardId = id;[span_37](end_span)
-        [span_38](start_span)let card = myCards.find(c => c.id === id);[span_38](end_span)
+        currentCardId = id;
+        let card = myCards.find(c => c.id === id);
         showScreen('screen-card-detail');
         document.getElementById('detail-card-visual').innerHTML = `<div class="bank-card" style="background:${card.color}; margin:auto;">
             <div style="font-weight:900;">BINGUS PREMIUM</div>
-            <div style="font-size:26px; font-weight:800;">${card.balance} ₽</div>
-            <div style="font-family:monospace;">${card.cardNum}</div>
+            <div style="font-size:26px; font-weight:800;">${card.balance.toLocaleString()} ₽</div>
+            <div style="font-family:monospace;">${card.cardNum.replace(/(\d{4})/g, '$1 ')}</div>
         </div>`;
-        document.getElementById('btn-block-card').innerText = card.blocked ? [span_39](start_span)"Разблокировать" : "Заблокировать";[span_39](end_span)
-        [span_40](start_span)const snap = await db.collection('users').doc(auth.currentUser.uid).collection('transactions').where('cardId','==',id).get();[span_40](end_span)
-        [span_41](start_span)renderTxList(snap, 'card-tx-list');[span_41](end_span)
+        document.getElementById('btn-block-card').innerText = card.blocked ? "Разблокировать" : "Заблокировать";
+        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('transactions').where('cardId','==',id).get();
+        renderTxList(snap, 'card-tx-list');
     }
 
     async function toggleBlockCard() {
-        [span_42](start_span)let card = myCards.find(c => c.id === currentCardId);[span_42](end_span)
-        [span_43](start_span)await db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(currentCardId).update({ blocked: !card.blocked });[span_43](end_span)
-        [span_44](start_span)location.reload();[span_44](end_span)
+        let card = myCards.find(c => c.id === currentCardId);
+        await db.collection('users').doc(auth.currentUser.uid).collection('cards').doc(currentCardId).update({ blocked: !card.blocked });
+        location.reload();
     }
 
     function renderCardSelection(id, onSelect) {
-        [span_45](start_span)const el = document.getElementById(id);[span_45](end_span)
+        const el = document.getElementById(id);
         el.innerHTML = '';
-        [span_46](start_span)myCards.filter(c => !c.blocked).forEach(c => {[span_46](end_span)
+        myCards.filter(c => !c.blocked).forEach(c => {
             const div = document.createElement('div');
             div.className = 'select-card-item';
-            div.innerHTML = `<span>•••• ${c.cardNum.slice(-4)}</span> <b>${c.balance} ₽</b>`;
+            div.innerHTML = `<span>•••• ${c.cardNum.slice(-4)}</span> <b>${c.balance.toLocaleString()} ₽</b>`;
             div.onclick = () => {
-                document.querySelectorAll(`#${id} .select-card-item`).forEach(i => i.classList.remove('selected'));
-                [span_47](start_span)div.classList.add('selected'); onSelect(c);[span_47](end_span)
+                el.querySelectorAll('.select-card-item').forEach(i => i.classList.remove('selected'));
+                div.classList.add('selected'); 
+                onSelect(c);
             };
             el.appendChild(div);
         });
     }
 
     function setBtnLoading(id, load, text) {
-        [span_48](start_span)const b = document.getElementById(id);[span_48](end_span)
-        if(load) { b.disabled = true; b.innerHTML = '<div class="btn-loader"></div>'; [span_49](start_span)}
-        else { b.disabled = false; b.innerHTML = text; }[span_49](end_span)
+        const b = document.getElementById(id);
+        if(!b) return;
+        if(load) { 
+            b.disabled = true;
+            b.innerHTML = '<div class="btn-loader"></div>'; 
+        } else { 
+            b.disabled = false; 
+            b.innerHTML = text;
+        }
     }
 
     function renderTxList(snap, id) {
-        [span_50](start_span)const list = document.getElementById(id);[span_50](end_span)
+        const list = document.getElementById(id);
         list.innerHTML = '';
-        [span_51](start_span)snap.forEach(doc => {[span_51](end_span)
+        if(snap.empty) {
+            list.innerHTML = '<p style="text-align:center; color:gray;">Нет операций</p>';
+            return;
+        }
+        snap.forEach(doc => {
             const tx = doc.data();
             list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
-                <span>${tx.title}</span><b>${tx.amount} ₽</b>
+                <span>${tx.title}</span><b>${tx.amount.toLocaleString()} ₽</b>
             </div>`;
         });
     }
 
-    function login() { auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-password').value); [span_52](start_span)}
-    function logout() { auth.signOut().then(()=>location.reload()); }[span_52](end_span)
+    function login() { 
+        auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-password').value)
+        .catch(e => alert("Ошибка входа: " + e.message)); 
+    }
+    
+    function logout() { auth.signOut().then(()=>location.reload()); }
+    
     function showScreen(id) {
-        [span_53](start_span)document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));[span_53](end_span)
-        [span_54](start_span)document.getElementById(id).classList.add('active');[span_54](end_span)
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
     }
-    function openCardModal() { document.getElementById('card-modal').style.display = 'flex'; [span_55](start_span)}
-    function closeCardModal() { document.getElementById('card-modal').style.display = 'none'; }[span_55](end_span)
-    async function issueCard() {
-        setBtnLoading('btn-issue', true, '');
-        await db.collection('users').doc(auth.currentUser.uid).collection('cards').add({
-            balance: 0,
-            cardNum: "4400" + Math.random().toString().slice(2,14),
-            color: tempColor,
-            blocked: false
-        });
-        location.reload();
-    }
-    function stopScannerAndBack() { if(html5QrCode) html5QrCode.stop().finally(() => showScreen('screen-payments-hub')); else showScreen('screen-payments-hub'); [span_56](start_span)}[span_56](end_span)
+    
+    function openCardModal() { document.getElementById('card-modal').style.display = 'flex'; }
+    function closeCardModal() { document.getElementById('card-modal').style.display = 'none'; }
+    function stopScannerAndBack() { if(html5QrCode) html5QrCode.stop().finally(() => showScreen('screen-payments-hub')); else showScreen('screen-payments-hub'); }
 </script>
 </body>
 </html>
