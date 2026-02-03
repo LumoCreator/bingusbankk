@@ -27,14 +27,14 @@
         * { 
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
         }
 
         html, body { 
             background-color: var(--bg);
             margin: 0; padding: 0; 
             width: 100%; height: 100%; 
-            overflow: hidden; /* Prevent body scroll, handle in .screen */
+            overflow: hidden;
             color: var(--text);
             user-select: none;
         }
@@ -75,36 +75,30 @@
             padding: 20px; 
             display: none; flex-direction: column; 
             background: var(--bg); 
-            overflow-y: auto; /* Scroll inside the screen */
+            overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             padding-bottom: 120px; /* Space for Bottom Nav */
         }
         
         .screen.active { display: flex; animation: slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-
-        /* Hide scrollbar for clean UI */
         .screen::-webkit-scrollbar { display: none; }
 
-        /* --- UI Elements --- */
+        /* --- Typography --- */
         h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.5px; }
         
         .header { 
             display: flex; justify-content: space-between; align-items: center; 
             padding: 10px 5px; margin-top: 10px; margin-bottom: 20px;
-            flex-shrink: 0; /* Prevent header from squashing */
+            flex-shrink: 0;
         }
 
-        /* --- CARDS SLIDER FIX --- */
+        /* --- Cards Slider --- */
         .cards-wrapper {
-            display: flex; 
-            overflow-x: auto; 
-            scroll-snap-type: x mandatory;
-            gap: 15px; 
-            scrollbar-width: none; 
-            /* Extra padding to prevent shadow clipping */
-            padding: 20px 20px 30px 20px; 
-            margin: 0 -20px 10px -20px; /* Negative margin to span full width */
-            flex-shrink: 0; /* Prevent compression */
+            display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+            gap: 15px; scrollbar-width: none; 
+            padding: 20px 20px 30px 20px;
+            margin: 0 -20px 10px -20px;
+            flex-shrink: 0;
         }
         .cards-wrapper::-webkit-scrollbar { display: none; }
 
@@ -112,37 +106,51 @@
             min-width: 280px; width: 85%; max-width: 320px;
             scroll-snap-align: center; aspect-ratio: 1.58 / 1;
             border-radius: 24px; padding: 25px;
-            color: white; display: flex; flex-direction: column;
-            justify-content: space-between; 
+            color: white; display: flex; flex-direction: column; justify-content: space-between; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.1);
             position: relative; cursor: pointer; overflow: hidden;
             transition: transform 0.2s cubic-bezier(0.3, 0, 0, 1);
-            flex-shrink: 0; /* Important: Don't squash cards */
+            flex-shrink: 0;
         }
         .bank-card:active { transform: scale(0.96); }
 
-        /* --- ACTION BUTTONS FIX --- */
+        /* --- UI Elements --- */
         .action-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
-            margin-bottom: 30px; /* Space before history */
-            flex-shrink: 0;
+            margin-bottom: 30px; flex-shrink: 0;
         }
 
+        /* Стеклянная панель для главной */
         .glass-panel {
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-radius: 24px; padding: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             border: 1px solid rgba(255,255,255,0.5);
-            /* Allows content to flow */
-            height: auto; 
+            height: auto;
+        }
+
+        /* Белая карточка для истории (растягивающаяся) */
+        .white-card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            min-height: 200px; /* Минимальная высота */
+            height: auto;      /* Растягивание */
+            margin-bottom: 20px;
         }
 
         input {
-            width: 100%; padding: 16px; margin-bottom: 12px; 
-            border-radius: 16px; border: none;
+            width: 100%; padding: 18px; margin-bottom: 12px; 
+            border-radius: 16px; border: 1px solid transparent;
             background: #fff; font-size: 16px; outline: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            transition: 0.2s;
+        }
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(255, 107, 0, 0.1);
         }
 
         .btn { 
@@ -161,7 +169,7 @@
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             height: var(--nav-height);
-            background: rgba(255, 255, 255, 0.95); /* More opaque */
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             display: none; justify-content: space-around; align-items: center;
             border-top: 1px solid rgba(0,0,0,0.05);
@@ -192,7 +200,7 @@
         .nav-center-btn:active { transform: translateY(-20px) scale(0.95); }
         .nav-center-btn svg { width: 32px; height: 32px; fill: white; }
 
-        /* --- Modals --- */
+        /* --- Modals & Components --- */
         .modal {
             position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
             display: none; align-items: center; justify-content: center; 
@@ -206,7 +214,6 @@
             animation: scaleIn 0.3s cubic-bezier(0.3, 0, 0, 1);
         }
 
-        /* --- Components --- */
         .tx-item {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 0; border-bottom: 1px solid rgba(0,0,0,0.05);
@@ -214,8 +221,8 @@
         }
         .tx-icon {
             width: 40px; height: 40px; border-radius: 14px; 
-            background: #fff; display: flex; align-items: center; justify-content: center;
-            font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-right: 15px;
+            background: #F2F2F7; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; margin-right: 15px;
         }
 
         .color-dot {
@@ -236,7 +243,7 @@
         .pin-btn {
             width: 75px; height: 75px; border-radius: 50%; background: white;
             display: flex; justify-content: center; align-items: center;
-            font-size: 26px; font-weight: 500; color: var(--text); cursor: pointer; 
+            font-size: 26px; font-weight: 500; color: var(--text); cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.1s;
         }
         .pin-btn:active { background: var(--text); color: white; transform: scale(0.9); }
@@ -279,7 +286,7 @@
             <span style="color: var(--danger); font-weight: 600; cursor: pointer; font-size: 14px;">Выйти</span>
         </div>
         <div class="pin-screen-content">
-            <div style="margin-bottom: 20px;">🔒</div>
+            <div style="margin-bottom: 20px; font-size: 40px;">🔒</div>
             <h2 id="pin-title" style="margin-bottom: 10px;">Код доступа</h2>
             <p id="pin-subtitle" style="color: var(--gray); margin-bottom: 40px; margin-top: 0;">Введите код</p>
             
@@ -339,7 +346,7 @@
 
     <div id="screen-history" class="screen">
         <h1 style="margin-top: 20px; margin-bottom: 20px;">История</h1>
-        <div class="glass-panel" id="full-history-list" style="min-height: 200px;">
+        <div class="white-card" id="full-history-list">
             </div>
     </div>
 
@@ -368,11 +375,17 @@
     <div id="screen-transfer-menu" class="screen" style="z-index: 1100;">
         <div onclick="showScreen('screen-main')" style="cursor:pointer; font-weight:700; margin-top:20px;">← Назад</div>
         <h2 style="margin: 25px 0;">Куда перевести?</h2>
+        
         <button class="btn secondary" style="margin-bottom: 15px; justify-content:flex-start;" onclick="openSelfTransfer()">
             <div style="width:30px;height:30px;background:#eee;border-radius:50%;display:flex;align-items:center;justify-content:center;">🔄</div> Между своими
         </button>
-        <button class="btn secondary" style="margin-bottom: 15px; justify-content:flex-start;" onclick="alert('Скоро')">
-            <div style="width:30px;height:30px;background:#eee;border-radius:50%;display:flex;align-items:center;justify-content:center;">👤</div> По номеру телефона
+        
+        <button class="btn secondary" style="margin-bottom: 15px; justify-content:flex-start;" onclick="openExternalTransfer('card')">
+            <div style="width:30px;height:30px;background:#eee;border-radius:50%;display:flex;align-items:center;justify-content:center;">💳</div> По номеру карты
+        </button>
+        
+        <button class="btn secondary" style="margin-bottom: 15px; justify-content:flex-start;" onclick="openExternalTransfer('email')">
+            <div style="width:30px;height:30px;background:#eee;border-radius:50%;display:flex;align-items:center;justify-content:center;">📧</div> По Email
         </button>
     </div>
 
@@ -385,6 +398,20 @@
         <div id="self-cards-to"></div>
         <input type="number" id="self-amount" placeholder="Сумма ₽" style="margin-top:20px;">
         <button class="btn primary" id="btn-exec-self" onclick="executeSelfTransfer()">Перевести</button>
+    </div>
+
+    <div id="screen-external-transfer" class="screen" style="z-index: 1200;">
+        <div onclick="showScreen('screen-transfer-menu')" style="cursor:pointer; font-weight:700; margin-top:20px;">← Назад</div>
+        <h2 id="ext-title">Перевод</h2>
+        
+        <p style="color: var(--gray); margin-top:20px;">С карты:</p>
+        <div id="ext-cards-from"></div>
+
+        <p style="color: var(--gray); margin-top: 15px;" id="ext-input-label">Реквизиты:</p>
+        <input type="text" id="ext-dest" placeholder="...">
+        <input type="number" id="ext-amount" placeholder="Сумма ₽">
+        
+        <button class="btn primary" id="btn-exec-ext" onclick="executeExternalTransfer()">Отправить</button>
     </div>
 
     <div id="screen-card-detail" class="screen" style="z-index: 1100;">
@@ -415,17 +442,16 @@
         <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         <span>Главная</span>
     </div>
+    
+    <div class="nav-center-btn" onclick="startSbpScanner()">
+        <svg viewBox="0 0 24 24"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 15h6v6H3v-6zm2 2v2h2v-2H5zm8 4h2v2h-2v-2zm-2-4h2v2h-2v-2zm4 0h2v2h-2v-2zm2 2h2v2h-2v-2z"/></svg>
+    </div>
+    
     <div class="nav-item" onclick="switchTab('history', this)">
         <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.97 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
         <span>История</span>
     </div>
-    <div class="nav-center-btn" onclick="startSbpScanner()">
-        <svg viewBox="0 0 24 24"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 15h6v6H3v-6zm2 2v2h2v-2H5zm8 4h2v2h-2v-2zm-2-4h2v2h-2v-2zm4 0h2v2h-2v-2zm2 2h2v2h-2v-2z"/></svg>
-    </div>
-    <div class="nav-item" onclick="switchTab('card-issue', this)">
-        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/><path d="M0 0h24v24H0z" fill="none"/></svg>
-        <span>Карты</span>
-    </div>
+
     <div class="nav-item" onclick="openIssueModal()">
         <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         <span>Новая</span>
@@ -477,6 +503,7 @@
 
     let myData = null, myCards = [], currentCardId = null;
     let selectedCardFrom = null, selectedCardTo = null;
+    let extTransferType = null; // 'card' or 'email'
     let tempColorIssue = 'linear-gradient(135deg, #FF9000, #FF6B00)';
     let tempColorChange = 'linear-gradient(135deg, #FF9000, #FF6B00)';
     let html5QrCode = null;
@@ -494,7 +521,6 @@
             loadFullHistory();
             showScreen('screen-history');
         }
-        if(tab === 'card-issue') showScreen('screen-main');
     }
 
     // --- PIN SYSTEM ---
@@ -564,10 +590,8 @@
             
             const cardsSnap = await userRef.collection('cards').get(); 
             myCards = cardsSnap.docs.map(d => ({id: d.id, ...d.data()}));
-            
             // Sort: newest first
             myCards.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
-
             renderMain();
             showScreen('screen-main');
             document.getElementById('bottom-nav').style.display = 'flex';
@@ -648,7 +672,7 @@
                 createdAt: Date.now()
             });
             closeModal('card-modal');
-            initMainFlow(); 
+            initMainFlow();
         } catch(e) {
             alert("Ошибка");
         }
@@ -714,7 +738,7 @@
     function login() { 
         setBtnLoading('btn-login', true, '');
         auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-password').value)
-        .catch(e => { alert(e.message); setBtnLoading('btn-login', false, 'Войти'); }); 
+        .catch(e => { alert(e.message); setBtnLoading('btn-login', false, 'Войти'); });
     }
 
     function logout() { localStorage.removeItem('user_pin'); auth.signOut().then(()=>location.reload()); }
@@ -742,7 +766,8 @@
         setBtnLoading('btn-confirm-sbp', true, '');
         if(selectedCardFrom.balance < sbpData.amount) { alert("Недостаточно средств"); setBtnLoading('btn-confirm-sbp', false, 'Оплатить'); return; }
         try {
-            const batch = db.batch(); const uRef = db.collection('users').doc(auth.currentUser.uid);
+            const batch = db.batch();
+            const uRef = db.collection('users').doc(auth.currentUser.uid);
             batch.update(uRef.collection('cards').doc(selectedCardFrom.id), { balance: firebase.firestore.FieldValue.increment(-sbpData.amount) });
             batch.set(uRef.collection('transactions').doc(), { amount: sbpData.amount, title: `СБП: ${sbpData.termId}`, type: 'outcome', date: Date.now(), cardId: selectedCardFrom.id });
             batch.update(db.collection('transactions_sbp').doc(sbpData.termId), { status: 'success', finalAmount: sbpData.amount });
@@ -756,16 +781,82 @@
         if(!selectedCardFrom || !selectedCardTo || val<=0) return alert("Ошибка данных");
         setBtnLoading('btn-exec-self', true, '');
         try {
-            const batch = db.batch(); const uRef = db.collection('users').doc(auth.currentUser.uid);
+            const batch = db.batch();
+            const uRef = db.collection('users').doc(auth.currentUser.uid);
             batch.update(uRef.collection('cards').doc(selectedCardFrom.id), { balance: firebase.firestore.FieldValue.increment(-val) });
             batch.update(uRef.collection('cards').doc(selectedCardTo.id), { balance: firebase.firestore.FieldValue.increment(val) });
             batch.set(uRef.collection('transactions').doc(), { title: "Между своими", amount: val, type: "self", date: Date.now(), cardId: selectedCardFrom.id });
             await batch.commit(); alert("Готово"); location.reload();
         } catch(e) { alert("Ошибка"); setBtnLoading('btn-exec-self', false, 'Перевести'); }
     }
+
+    // --- EXTERNAL TRANSFER LOGIC ---
+    function openExternalTransfer(type) {
+        extTransferType = type;
+        showScreen('screen-external-transfer');
+        document.getElementById('ext-title').innerText = type === 'card' ? "По номеру карты" : "По Email";
+        document.getElementById('ext-input-label').innerText = type === 'card' ? "Номер карты получателя:" : "Email получателя:";
+        document.getElementById('ext-dest').placeholder = type === 'card' ? "0000 0000 0000 0000" : "example@mail.ru";
+        document.getElementById('ext-dest').type = type === 'card' ? "tel" : "email";
+        renderCardSelection('ext-cards-from', c => selectedCardFrom = c);
+    }
+
+    async function executeExternalTransfer() {
+        const dest = document.getElementById('ext-dest').value;
+        const val = parseInt(document.getElementById('ext-amount').value);
+
+        if(!selectedCardFrom || !dest || isNaN(val) || val <= 0) return alert("Проверьте данные");
+        if(selectedCardFrom.balance < val) return alert("Недостаточно средств");
+
+        setBtnLoading('btn-exec-ext', true, '');
+
+        try {
+            const batch = db.batch();
+            const uRef = db.collection('users').doc(auth.currentUser.uid);
+
+            if (extTransferType === 'email') {
+                // Попытка найти пользователя по email (Работает если правила Firebase разрешают чтение users)
+                // Если не найдет или нет прав - сымитируем отправку
+                const snapshot = await db.collection('users').where('email', '==', dest).limit(1).get();
+                
+                if (!snapshot.empty) {
+                    const receiver = snapshot.docs[0];
+                    // Ищем карту получателя
+                    const rCards = await receiver.ref.collection('cards').limit(1).get();
+                    if (!rCards.empty) {
+                         const rCard = rCards.docs[0];
+                         batch.update(rCard.ref, { balance: firebase.firestore.FieldValue.increment(val) });
+                         batch.set(receiver.ref.collection('transactions').doc(), {
+                             amount: val, title: "Входящий перевод", type: "income", date: Date.now(), cardId: rCard.id
+                         });
+                    }
+                }
+            }
+
+            // Списание у отправителя
+            batch.update(uRef.collection('cards').doc(selectedCardFrom.id), { balance: firebase.firestore.FieldValue.increment(-val) });
+            batch.set(uRef.collection('transactions').doc(), { 
+                amount: val, 
+                title: extTransferType === 'card' ? `Перевод на карту *${dest.slice(-4)}` : `Перевод ${dest}`, 
+                type: 'outcome', 
+                date: Date.now(), 
+                cardId: selectedCardFrom.id 
+            });
+
+            await batch.commit();
+            alert("Перевод отправлен!");
+            location.reload();
+
+        } catch(e) {
+            console.error(e);
+            alert("Ошибка перевода (проверьте интернет)");
+            setBtnLoading('btn-exec-ext', false, 'Отправить');
+        }
+    }
     
     function renderCardSelection(id, onSelect) {
-        const el = document.getElementById(id); el.innerHTML = '';
+        const el = document.getElementById(id);
+        el.innerHTML = '';
         myCards.filter(c => !c.blocked).forEach(c => {
             const div = document.createElement('div'); div.className = 'select-card-item';
             div.style.padding='15px'; div.style.marginBottom='10px'; div.style.background='white'; div.style.borderRadius='12px';
